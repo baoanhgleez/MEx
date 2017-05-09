@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <ImageView
+        android:id="@+id/imgphai"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/imgtrai"
+        android:layout_toRightOf="@+id/imgxuong"
+        android:contentDescription="TODO"
+        android:src="@drawable/phai" />
+
+    <ImageView
+        android:id="@+id/imglen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/imgphai"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/len" />
+
+    <ImageView
+        android:id="@+id/imgxuong"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/imglen"
+        android:layout_marginBottom="17dp"
+        android:src="@drawable/xuong" />
+
+    <ImageView
+        android:id="@+id/imgtrai"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/imgxuong"
+        android:layout_toLeftOf="@+id/imglen"
+        android:src="@drawable/trai" />
+
+    <TextView
+        android:id="@+id/texttrangthai"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:text="BẢNG ĐIỀU KHIỂN"
+        android:textAppearance="?android:attr/textAppearanceLarge"/>
+
+    <Button
+        android:id="@+id/nuttd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/texttrangthai"
+        android:layout_marginTop="20dp"
+        android:text="Tự Động" />
+
+    <Button
+        android:id="@+id/nutdoline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/nutdk"
+        android:layout_alignBottom="@+id/nutdk"
+        android:layout_alignParentRight="true"
+        android:text="Dò line" />
+
+    <Button
+        android:id="@+id/nutsvr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/imgphai"
+        android:layout_alignTop="@+id/imglen"
+        android:text="Phải" />
+
+    <Button
+        android:id="@+id/nutsvl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/imgtrai"
+        android:layout_alignTop="@+id/imglen"
+        android:text="Trái" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="41dp"
+        android:layout_alignBottom="@+id/linearLayout1"
+        android:layout_alignParentLeft="true"
+        android:text="Tốc độ:"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/nuttd"
+        android:layout_marginTop="20dp" >
+
+        <Button
+            android:id="@+id/nuttocdo1"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1" />
+
+        <Button
+            android:id="@+id/nuttocdo2"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2" />
+
+        <Button
+            android:id="@+id/nuttocdo3"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3" />
+
+        <Button
+            android:id="@+id/nuttocdo4"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="4" />
+
+        <Button
+            android:id="@+id/nuttocdo5"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/nutdk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/linearLayout1"
+        android:layout_toLeftOf="@+id/nutdoline"
+        android:layout_toRightOf="@+id/nuttd"
+        android:text="Điều khiển" />
+
+</RelativeLayout>
