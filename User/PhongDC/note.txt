@@ -1,0 +1,25 @@
+https://developers.google.com/vr/android/reference/com/google/vr/sdk/base/HeadTransform
+
+      ====================================
+
+      public void getQuaternion (float[] quaternion, int offset)
+
+      Provides the quaternion representing the head rotation.
+
+      Parameters
+
+      quaternion	Array where the quaternion (x, y, z, w) will be written to.
+      offset	Offset in the array where data should be written.
+      
+      ====================================
+      
+      public void getForwardVector (float[] forward, int offset)
+
+      Provides the direction the head is looking towards as a 3x1 unit vector.
+
+      Note that in OpenGL the forward vector points into the -Z direction. Make sure to invert it if ever used to compute the basis of a         right-handed system.
+
+      Parameters
+
+      forward	Array where the forward vector will be written to.
+      offset	Offset in the array where data should be written.
