@@ -40,7 +40,7 @@
             android:layout_toRightOf="@id/btnTurnLeft"
             android:layout_marginLeft="5dp"/>
 
-        <Button android:id="@+id/btnBrake"
+        <Button android:id="@+id/btnSpeed"
             android:background="@drawable/rightpedal"
             android:layout_width="70dp"
             android:layout_height="115dp"
@@ -61,20 +61,20 @@
             android:layout_width="40dp"
             android:layout_height="40dp"/>
 
-        <Button android:id="@+id/btnSpeed"
+        <Button android:id="@+id/btnBrake"
             android:background="@drawable/leftpedal"
             android:layout_width="70dp"
             android:layout_height="86dp"
             android:layout_alignParentBottom="true"
-            android:layout_toLeftOf="@+id/btnBrake"
-            android:layout_toStartOf="@+id/btnBrake" />
+            android:layout_toLeftOf="@+id/btnSpeed"
+            android:layout_toStartOf="@+id/btnSpeed" />
 
         <Button
             android:id="@+id/btnGearSwitcher"
             android:layout_width="40dp"
             android:layout_height="98dp"
             android:background="@drawable/gearswitch"
-            android:layout_above="@id/btnBrake"
+            android:layout_above="@id/btnSpeed"
             android:layout_alignParentRight="true"
             android:layout_marginBottom="20dp"/>
 
