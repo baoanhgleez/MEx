@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.android.miniexplorer.MainActivity"
+    android:background="@color/clouds">
+
+    <RelativeLayout
+        android:id="@+id/controlLayout"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom">
+
+        <Button android:id="@+id/btnStreeringWheel"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:background="@drawable/steeringwheel"
+            android:scaleType="center"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"/>
+
+        <Button
+            android:id="@+id/btnTurnLeft"
+            android:background="@drawable/turnleft"
+            android:layout_width="70dp"
+            android:layout_height="32dp"
+            android:layout_alignParentLeft="true"
+            android:layout_above="@id/btnStreeringWheel"
+            android:layout_marginRight="5dp"/>
+
+        <Button
+            android:id="@+id/btnTurnRight"
+            android:background="@drawable/turnrigh"
+            android:layout_width="70dp"
+            android:layout_height="32dp"
+            android:layout_above="@id/btnStreeringWheel"
+            android:layout_toRightOf="@id/btnTurnLeft"
+            android:layout_marginLeft="5dp"/>
+
+        <Button android:id="@+id/btnSpeed"
+            android:background="@drawable/rightpedal"
+            android:layout_width="70dp"
+            android:layout_height="115dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="5dp"/>
+
+        <!--Còi-->
+        <Button
+            android:id="@+id/btnSpeaker"
+            android:background="@color/transparent"
+            android:layout_alignTop="@+id/btnStreeringWheel"
+            android:layout_alignRight="@+id/btnStreeringWheel"
+            android:layout_alignEnd="@+id/btnStreeringWheel"
+            android:layout_marginRight="55dp"
+            android:layout_marginEnd="55dp"
+            android:layout_marginTop="55dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"/>
+
+        <Button android:id="@+id/btnBrake"
+            android:background="@drawable/leftpedal"
+            android:layout_width="70dp"
+            android:layout_height="86dp"
+            android:layout_alignParentBottom="true"
+            android:layout_toLeftOf="@+id/btnSpeed"
+            android:layout_toStartOf="@+id/btnSpeed" />
+
+        <Button
+            android:id="@+id/btnGearSwitcher"
+            android:layout_width="40dp"
+            android:layout_height="98dp"
+            android:background="@drawable/gearswitch"
+            android:layout_above="@id/btnSpeed"
+            android:layout_alignParentRight="true"
+            android:layout_marginBottom="20dp"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/infoLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="@dimen/activity_horizontal_margin">
+
+        <ImageView
+            android:id="@+id/ledTurnLeft"
+            android:layout_width="35dp"
+            android:layout_height="29dp"
+            android:background="@drawable/turnleftled"
+            android:layout_marginRight="5dp"
+            />
+        <ImageView
+            android:id="@+id/ledTurnRight"
+            android:layout_width="35dp"
+            android:layout_height="29dp"
+            android:background="@drawable/turnrightled"
+            android:layout_toRightOf="@id/ledTurnLeft"
+            android:layout_marginLeft="5dp"
+            />
+        <TextView
+            android:id="@+id/txSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:text="60km/h"
+            android:textSize="10pt"
+            android:fontFamily="serif-monospace"
+            android:textColor="@color/asbestos"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/ledTurnLeft"
+            android:text="PITCH"
+            android:textColor="@color/asbestos"
+            android:id="@+id/pitch"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/pitch"
+            android:text="YAW"
+            android:textColor="@color/asbestos"
+            android:id="@+id/yaw"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/yaw"
+            android:text="ROLL"
+            android:textColor="@color/asbestos"
+            android:id="@+id/roll"/>
+    </RelativeLayout>
+
+</RelativeLayout>
