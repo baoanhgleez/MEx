@@ -7,11 +7,15 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.google.vr.sdk.base.HeadTransform;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
@@ -19,12 +23,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     Button btnSteeringWheel, btnSpeed, btnBrake, btnGearSwitch;
     Button btnSignalLeft, btnSignalRight, btnSpeaker;
+    Button btnConnect;
+    EditText edtAddress, edtPort;
 
     RelativeLayout infoLayout;
     ImageView ledSignalLeft, ledSignalRight;
     TextView txSpeed;
 
     TextView txtPitch, txtYaw, txtRoll;
+
+    JSONObject json = new JSONObject();
+    JSONObject angleNode = new JSONObject();
+    JSONObject speedNode = new JSONObject();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +83,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         ledSignalLeft.setVisibility(ImageView.GONE);
         ledSignalRight.setVisibility(ImageView.GONE);
 
+        btnConnect = (Button) findViewById(R.id.btnConnect);
+        edtAddress = (EditText) findViewById(R.id.edtAddress);
+        edtPort = (EditText) findViewById(R.id.edtPort);
+
+        btnConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Client myClient = new Client(edtAddress.getText().toString(), Integer.parseInt(edtPort.getText().toString()), speedNode);
+                myClient.execute();
+            }
+        });
+
         //Demo
         txtPitch = (TextView) findViewById(R.id.pitch);
         txtYaw = (TextView) findViewById(R.id.yaw);
@@ -97,20 +119,38 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case R.id.btnBrake:
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        btnBrake.setBackground(getDrawable(R.drawable.rightpedalpressed));
+                        btnBrake.setBackgroundResource(R.drawable.leftpedalpressed);
+                        try {
+                            speedNode.put("value", "BACKWARD");
+                            txtRoll.setText(speedNode.get("value").toString());
+                        } catch (JSONException e) {
+                            Log.e("ERROR", e.getMessage());
+                        }
+                        //Brake
+                        //btnBrake.setBackground(getDrawable(R.drawable.rightpedalpressed));
                         break;
                     case MotionEvent.ACTION_UP:
-                        btnBrake.setBackground(getDrawable(R.drawable.rightpedal));
+                        btnBrake.setBackgroundResource(R.drawable.leftpedal);
+                        //btnBrake.setBackground(getDrawable(R.drawable.rightpedal));
                         break;
                 }
                 break;
             case R.id.btnSpeed:
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        btnSpeed.setBackground(getDrawable(R.drawable.leftpedalpressed));
+                        btnSpeed.setBackgroundResource(R.drawable.rightpedalpressed);
+                        try {
+                            speedNode.put("value", "FORWARD");
+                            txtRoll.setText(speedNode.get("value").toString());
+                        } catch (JSONException e) {
+                            Log.e("ERROR", e.getMessage());
+                        }
+                        //Forward
+                        //btnSpeed.setBackground(getDrawable(R.drawable.rightpedalpressed));
                         break;
                     case MotionEvent.ACTION_UP:
-                        btnSpeed.setBackground(getDrawable(R.drawable.leftpedal));
+                        btnSpeed.setBackgroundResource(R.drawable.rightpedal);
+                        //btnSpeed.setBackground(getDrawable(R.drawable.rightpedal));
                         break;
                 }
                 break;

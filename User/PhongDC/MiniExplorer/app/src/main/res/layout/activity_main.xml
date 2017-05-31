@@ -78,6 +78,30 @@
             android:layout_alignParentRight="true"
             android:layout_marginBottom="20dp"/>
 
+        <EditText
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:layout_toLeftOf="@+id/btnConnect"
+            android:layout_alignParentBottom="true"
+            android:textColor="@android:color/black"
+            android:id="@+id/edtPort"/>
+        <EditText
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:layout_toLeftOf="@+id/btnConnect"
+            android:layout_above="@id/edtPort"
+            android:textColor="@android:color/black"
+            android:id="@+id/edtAddress"
+            android:layout_marginBottom="10dp"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/btnConnect"
+            android:layout_toLeftOf="@id/btnBrake"
+            android:layout_alignParentBottom="true"
+            android:text="Connect"/>
     </RelativeLayout>
 
     <RelativeLayout
