@@ -12,11 +12,11 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
 import com.google.vr.sdk.base.HeadTransform;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.net.URISyntaxException;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
     RelativeLayout controlLayout;
@@ -24,17 +24,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Button btnSteeringWheel, btnSpeed, btnBrake, btnGearSwitch;
     Button btnSignalLeft, btnSignalRight, btnSpeaker;
     Button btnConnect;
-    EditText edtAddress, edtPort;
+    EditText edtAddress;
 
     RelativeLayout infoLayout;
     ImageView ledSignalLeft, ledSignalRight;
     TextView txSpeed;
 
     TextView txtPitch, txtYaw, txtRoll;
-
-    JSONObject json = new JSONObject();
-    JSONObject angleNode = new JSONObject();
-    JSONObject speedNode = new JSONObject();
+    String data = "";
+    float angle = 0;
+    boolean flag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,13 +84,32 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         btnConnect = (Button) findViewById(R.id.btnConnect);
         edtAddress = (EditText) findViewById(R.id.edtAddress);
-        edtPort = (EditText) findViewById(R.id.edtPort);
 
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Client myClient = new Client(edtAddress.getText().toString(), Integer.parseInt(edtPort.getText().toString()), speedNode);
-                myClient.execute();
+                Thread test = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Socket socket = null;
+                        try {
+                            socket = IO.socket("http://" + edtAddress.getText().toString() + "/androidapp");
+                            socket.connect();
+
+                            while (flag) {
+                                socket.emit("speed", data);
+                                socket.emit("angle", angle);
+                                Thread.sleep(500);
+                            }
+                            socket.close();
+                        } catch (URISyntaxException e) {
+                            Log.e("ERROR", e.getMessage());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                test.start();
             }
         });
 
@@ -111,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public boolean onTouch(View widget, MotionEvent event) {
         int id = widget.getId();
 
-        switch (id){
+        switch (id) {
             case R.id.btnStreeringWheel:
                 onWheelRotate(event);
                 break;
@@ -120,18 +138,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnBrake.setBackgroundResource(R.drawable.leftpedalpressed);
-                        try {
-                            speedNode.put("value", "BACKWARD");
-                            txtRoll.setText(speedNode.get("value").toString());
-                        } catch (JSONException e) {
-                            Log.e("ERROR", e.getMessage());
-                        }
-                        //Brake
-                        //btnBrake.setBackground(getDrawable(R.drawable.rightpedalpressed));
+                        data = "BACKWARD";
+                        txtRoll.setText(data);
                         break;
                     case MotionEvent.ACTION_UP:
                         btnBrake.setBackgroundResource(R.drawable.leftpedal);
-                        //btnBrake.setBackground(getDrawable(R.drawable.rightpedal));
                         break;
                 }
                 break;
@@ -139,18 +150,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnSpeed.setBackgroundResource(R.drawable.rightpedalpressed);
-                        try {
-                            speedNode.put("value", "FORWARD");
-                            txtRoll.setText(speedNode.get("value").toString());
-                        } catch (JSONException e) {
-                            Log.e("ERROR", e.getMessage());
-                        }
-                        //Forward
-                        //btnSpeed.setBackground(getDrawable(R.drawable.rightpedalpressed));
+                        data = "FORWARD";
+                        txtRoll.setText(data);
                         break;
                     case MotionEvent.ACTION_UP:
                         btnSpeed.setBackgroundResource(R.drawable.rightpedal);
-                        //btnSpeed.setBackground(getDrawable(R.drawable.rightpedal));
                         break;
                 }
                 break;
@@ -177,19 +181,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
 
-
     int signalTurnFlag;
 
-    /**Control the led to send signal turn
+    /**
+     * Control the led to send signal turn
      * signalTurnFlag: Save the instance of signal button
-     *      0 : No signal
-     *      1 : Turn left
-     *      2 : Turn right
-     * @param id of the view which was pressed
+     * 0 : No signal
+     * 1 : Turn left
+     * 2 : Turn right
+     *
+     * @param id     of the view which was pressed
      * @param action action of finger
      */
     private void onSignalTurn(int id, int action) {
-        if (action==MotionEvent.ACTION_UP) {
+        if (action == MotionEvent.ACTION_UP) {
 
             if (id == R.id.btnTurnLeft) {
                 // if the left-led is turning on, turn of signal.
@@ -226,15 +231,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     double viewRotation, fingerRotation, newFingerRotation;
     float rotateAngle;
 
-    /** Control and get rotation of steering wheel
+    /**
+     * Control and get rotation of steering wheel
+     *
      * @param event save position of finger to calculate the angle
      */
     private void onWheelRotate(MotionEvent event) {
         final float x = event.getX();
         final float y = event.getY();
 
-        final float xc = btnSteeringWheel.getWidth()/2;
-        final float yc = btnSteeringWheel.getHeight()/2;
+        final float xc = btnSteeringWheel.getWidth() / 2;
+        final float yc = btnSteeringWheel.getHeight() / 2;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -243,11 +250,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                rotateAngle = (float)(viewRotation + newFingerRotation - fingerRotation);
+                rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
+                angle = rotateAngle;
                 btnSteeringWheel.setRotation(rotateAngle);
                 break;
             case MotionEvent.ACTION_UP:
                 fingerRotation = newFingerRotation = rotateAngle = 0.0f;
+                angle = 0;
                 btnSteeringWheel.setRotation(rotateAngle);
                 break;
         }

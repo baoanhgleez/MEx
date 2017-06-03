@@ -83,16 +83,8 @@
             android:layout_height="wrap_content"
             android:background="@android:color/white"
             android:layout_toLeftOf="@+id/btnConnect"
+            android:textColor="@android:color/black"
             android:layout_alignParentBottom="true"
-            android:textColor="@android:color/black"
-            android:id="@+id/edtPort"/>
-        <EditText
-            android:layout_width="300dp"
-            android:layout_height="wrap_content"
-            android:background="@android:color/white"
-            android:layout_toLeftOf="@+id/btnConnect"
-            android:layout_above="@id/edtPort"
-            android:textColor="@android:color/black"
             android:id="@+id/edtAddress"
             android:layout_marginBottom="10dp"/>
         <Button
