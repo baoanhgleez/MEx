@@ -12,11 +12,14 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.github.nkzawa.socketio.client.IO;
-import com.github.nkzawa.socketio.client.Socket;
 import com.google.vr.sdk.base.HeadTransform;
 
-import java.net.URISyntaxException;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
     RelativeLayout controlLayout;
@@ -24,16 +27,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Button btnSteeringWheel, btnSpeed, btnBrake, btnGearSwitch;
     Button btnSignalLeft, btnSignalRight, btnSpeaker;
     Button btnConnect;
-    EditText edtAddress;
 
     RelativeLayout infoLayout;
     ImageView ledSignalLeft, ledSignalRight;
     TextView txSpeed;
 
     TextView txtPitch, txtYaw, txtRoll;
-    String data = "";
     float angle = 0;
     boolean flag = true;
+
+    JSONObject data;
+    static final int NORMAL_SPEED = 10;
+    static final int BRAKE_SPEED = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,33 +88,51 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         ledSignalRight.setVisibility(ImageView.GONE);
 
         btnConnect = (Button) findViewById(R.id.btnConnect);
-        edtAddress = (EditText) findViewById(R.id.edtAddress);
 
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Thread test = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Socket socket = null;
-                        try {
-                            socket = IO.socket("http://" + edtAddress.getText().toString() + "/androidapp");
-                            socket.connect();
+                if (btnConnect.getText().equals("Connect")) {
+                    btnConnect.setText("Disconnect");
+                    flag = true;
+                    Thread test = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Socket socket = null;
+                            DataOutputStream outputStream = null;
+                            try {
+                                socket = new java.net.Socket("192.168.4.1", 8002);
+                                outputStream =  new DataOutputStream(socket.getOutputStream());
+                                data = new JSONObject();
+                                while (flag) {
+                                    outputStream.flush();
+                                    outputStream.writeBytes(data.toString());
+                                    Thread.sleep(1000);
+                                }
 
-                            while (flag) {
-                                socket.emit("speed", data);
-                                socket.emit("angle", angle);
-                                Thread.sleep(500);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } finally {
+                                if (socket != null) {
+                                    flag = false;
+                                    try {
+                                        outputStream.close();
+                                        socket.close();
+                                        btnConnect.setText("Connect");
+                                    } catch (IOException e) {
+                                        Log.e("ERROR", e.getMessage());
+                                    }
+                                }
                             }
-                            socket.close();
-                        } catch (URISyntaxException e) {
-                            Log.e("ERROR", e.getMessage());
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
                         }
-                    }
-                });
-                test.start();
+                    });
+                    test.start();
+                } else {
+                    btnConnect.setText("Connect");
+                    flag = false;
+                }
             }
         });
 
@@ -138,8 +161,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnBrake.setBackgroundResource(R.drawable.leftpedalpressed);
-                        data = "BACKWARD";
-                        txtRoll.setText(data);
+                        try {
+                            data.put("speed", BRAKE_SPEED);
+                            txtRoll.setText(data.getInt("SPEED"));
+                        } catch (JSONException e) {
+                            Log.e("ERROR", e.getMessage());
+                        }
                         break;
                     case MotionEvent.ACTION_UP:
                         btnBrake.setBackgroundResource(R.drawable.leftpedal);
@@ -150,8 +177,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnSpeed.setBackgroundResource(R.drawable.rightpedalpressed);
-                        data = "FORWARD";
-                        txtRoll.setText(data);
+                        try {
+                            data.put("speed", NORMAL_SPEED);
+                            txtRoll.setText(data.getInt("SPEED"));
+                        } catch (JSONException e) {
+                            Log.e("ERROR", e.getMessage());
+                        }
                         break;
                     case MotionEvent.ACTION_UP:
                         btnSpeed.setBackgroundResource(R.drawable.rightpedal);
@@ -251,12 +282,22 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
                 rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
-                angle = rotateAngle;
-                btnSteeringWheel.setRotation(rotateAngle);
+                if ( rotateAngle >= -90f && rotateAngle <= 90f) {
+                    try {
+                        data.put("angle", Math.round(rotateAngle + 180));
+                    } catch (JSONException e) {
+                        Log.e("ERROR", e.getMessage());
+                    }
+                    btnSteeringWheel.setRotation(rotateAngle);
+                }
                 break;
             case MotionEvent.ACTION_UP:
                 fingerRotation = newFingerRotation = rotateAngle = 0.0f;
-                angle = 0;
+                try {
+                    data.put("angle", Math.round(rotateAngle + 180));
+                } catch (JSONException e) {
+                    Log.e("ERROR", e.getMessage());
+                }
                 btnSteeringWheel.setRotation(rotateAngle);
                 break;
         }
