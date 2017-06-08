@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <Servo.h>
+#include <ArduinoJson.h>
 
 const char* ssid = "fakehub";       
 const char* password = "fakepass";  
@@ -13,6 +14,7 @@ Servo myServo;
 void setup() {
     // cai dat servo
     myServo.attach(servoPin);
+    myServo.write(90);
 
     Serial.begin(115200);
     
@@ -36,7 +38,9 @@ void setup() {
 WiFiClient client;
 int ind=0;
 char data[1000];
+String json;
 int angle, value;
+DynamicJsonBuffer jsonBuffer;
 
 void loop() {    
   if(!client.connected()) {
@@ -51,25 +55,48 @@ void loop() {
       {
         data[ind] = client.read();
         ind++;
-      }   
+      }
+
       // xoa bo nho dem tu client
       client.flush();
       
+      Serial.print("data: ");
       Serial.println(data);
+      
+      json="";
+      
       for(int i=0; i<ind; i++){
-        value = value*10 + (data[i]-'0');
+        json += data[i];
       }
-      Serial.println(value);
+      Serial.print("json: ");
+      Serial.println(json);
+        
+      JsonObject& root = jsonBuffer.parseObject(json);
 
-      // dieu khien servo
-      // luu y servo chi quay khi 0<=value<=180
-      myServo.write(value);
+      // speed
+      int speedk = root[String("speed")];
+      Serial.print("speed: "); Serial.println(speedk);
+      
+      // angle
+      int angle = root[String("angle")];
+      Serial.print("angle: "); Serial.println(angle);
+      
+      // mode
+      int modek = root[String("mode")];
+      Serial.print("mode: "); Serial.println(modek);
 
+      // START: Truyen du lieu cho Serial Command
+      Serial.print("MOVE ");
+      Serial.print(speedk); Serial.print(" "); 
+      Serial.print(angle); Serial.print(" "); 
+      Serial.print(modek); Serial.println(); 
+      // END
+      
       // xoa gia tri bien tam
-      ind = 0;       value=0;
+      ind = 0;
 
       // gui lai chuoi co client
-      client.print("OK!");
+      // client.print("OK!");
     }
   }
 }
