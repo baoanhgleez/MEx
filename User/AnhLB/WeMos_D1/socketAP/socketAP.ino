@@ -83,7 +83,14 @@ void loop() {
       
       // mode
       int modek = root[String("mode")];
-      Serial.print("angle: "); Serial.println(modek);
+      Serial.print("mode: "); Serial.println(modek);
+
+      // START: Truyen du lieu cho Serial Command
+      Serial.print("MOVE ");
+      Serial.print(speedk); Serial.print(" "); 
+      Serial.print(angle); Serial.print(" "); 
+      Serial.print(modek); Serial.println(); 
+      // END
       
       // xoa gia tri bien tam
       ind = 0;
