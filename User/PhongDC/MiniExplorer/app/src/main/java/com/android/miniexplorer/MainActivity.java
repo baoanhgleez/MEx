@@ -7,7 +7,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -35,8 +34,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     TextView txtPitch, txtYaw, txtRoll;
     float angle = 0;
     boolean flag = true;
+    boolean gearMode = true;
 
-    JSONObject data;
+    JSONObject data = new JSONObject();
     static final int NORMAL_SPEED = 10;
     static final int BRAKE_SPEED = 0;
 
@@ -103,7 +103,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             try {
                                 socket = new java.net.Socket("192.168.4.1", 8002);
                                 outputStream =  new DataOutputStream(socket.getOutputStream());
-                                data = new JSONObject();
                                 while (flag) {
                                     outputStream.flush();
                                     outputStream.writeBytes(data.toString());
@@ -120,7 +119,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                                     try {
                                         outputStream.close();
                                         socket.close();
-                                        btnConnect.setText("Connect");
                                     } catch (IOException e) {
                                         Log.e("ERROR", e.getMessage());
                                     }
@@ -198,6 +196,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case R.id.btnTurnRight:
                 onSignalTurn(id, event.getAction());
                 break;
+
+            case R.id.btnGearSwitcher:
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    switchMode();
+                }
+                break;
         }
         return false;
     }
@@ -252,6 +256,23 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     ledSignalRight.setVisibility(ImageView.VISIBLE);
                 }
             }
+        }
+    }
+
+    private void switchMode() {
+        try {
+            if (gearMode) {
+                btnGearSwitch.setBackgroundResource(R.drawable.gearswitchreverse);
+                data.put("mode", 1);
+                System.out.println("TIEN");
+            } else {
+                btnGearSwitch.setBackgroundResource(R.drawable.gearswitch);
+                data.put("mode", 0);
+                System.out.println("LUI");
+            }
+            gearMode = !gearMode;
+        } catch (JSONException e) {
+            Log.e("ERROR: ", e.getMessage());
         }
     }
 
