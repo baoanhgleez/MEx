@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                                 while (flag) {
                                     outputStream.flush();
                                     outputStream.writeBytes(data.toString());
-                                    Thread.sleep(1000);
+                                    Thread.sleep(10);
                                 }
 
                             } catch (IOException e) {
