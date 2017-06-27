@@ -1,0 +1,1 @@
+include ':app', ':sdk-simplevideowidget', ':sdk-controllerclient', ':sdk-treasurehunt', ':sdk-videoplayer', ':sdk-simplepanowidget'
