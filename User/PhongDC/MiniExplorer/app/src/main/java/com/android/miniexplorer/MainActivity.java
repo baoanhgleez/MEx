@@ -10,35 +10,32 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 import com.google.vr.sdk.base.HeadTransform;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
-    RelativeLayout controlLayout;
 
+    //Declare variables
+    RelativeLayout controlLayout;
     Button btnSteeringWheel, btnSpeed, btnBrake, btnGearSwitch;
     Button btnSignalLeft, btnSignalRight, btnSpeaker;
     Button btnConnect;
-
     RelativeLayout infoLayout;
     ImageView ledSignalLeft, ledSignalRight;
     TextView txSpeed;
-
     TextView txtPitch, txtYaw, txtRoll;
-    float angle = 0;
+
     boolean flag = true;
     boolean gearMode = true;
-
     JSONObject data = new JSONObject();
-    static final int NORMAL_SPEED = 10;
-    static final int BRAKE_SPEED = 0;
+    static int mode = 0;
+    static int SPEED_LEVEL_MIN = 0;
+    static int SPEED_LEVEL = 0;
+    static int SPEED_LEVEL_MAX = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,14 +98,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             Socket socket = null;
                             DataOutputStream outputStream = null;
                             try {
-                                socket = new java.net.Socket("192.168.4.1", 8002);
+                                socket = new java.net.Socket("192.168.0.1", 8002);
                                 outputStream =  new DataOutputStream(socket.getOutputStream());
                                 while (flag) {
-                                    outputStream.flush();
+                                    try {
+                                        data.put("mode", mode);
+                                        data.put("speed", SPEED_LEVEL);
+                                        data.put("angle", Math.round(rotateAngle + 180));
+                                        Log.d("GIA TRI", data.toString());
+                                    } catch (JSONException e) {
+                                        Log.e("ERROR", e.getMessage());
+                                    }
                                     outputStream.writeBytes(data.toString());
-                                    Thread.sleep(10);
+                                    outputStream.flush();
+                                    Thread.sleep(100);
                                 }
-
                             } catch (IOException e) {
                                 e.printStackTrace();
                             } catch (InterruptedException e) {
@@ -159,11 +163,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnBrake.setBackgroundResource(R.drawable.leftpedalpressed);
-                        try {
-                            data.put("speed", BRAKE_SPEED);
-                            txtRoll.setText(data.getInt("SPEED"));
-                        } catch (JSONException e) {
-                            Log.e("ERROR", e.getMessage());
+                        if (SPEED_LEVEL > SPEED_LEVEL_MIN) {
+                            SPEED_LEVEL -= 2;
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -175,11 +176,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         btnSpeed.setBackgroundResource(R.drawable.rightpedalpressed);
-                        try {
-                            data.put("speed", NORMAL_SPEED);
-                            txtRoll.setText(data.getInt("SPEED"));
-                        } catch (JSONException e) {
-                            Log.e("ERROR", e.getMessage());
+                        if (SPEED_LEVEL < SPEED_LEVEL_MAX) {
+                            SPEED_LEVEL += 2;
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -199,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
             case R.id.btnGearSwitcher:
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    SPEED_LEVEL = SPEED_LEVEL_MIN;
                     switchMode();
                 }
                 break;
@@ -260,20 +259,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void switchMode() {
-        try {
-            if (gearMode) {
-                btnGearSwitch.setBackgroundResource(R.drawable.gearswitchreverse);
-                data.put("mode", 1);
-                System.out.println("TIEN");
-            } else {
-                btnGearSwitch.setBackgroundResource(R.drawable.gearswitch);
-                data.put("mode", 0);
-                System.out.println("LUI");
-            }
-            gearMode = !gearMode;
-        } catch (JSONException e) {
-            Log.e("ERROR: ", e.getMessage());
+        if (gearMode) {
+            btnGearSwitch.setBackgroundResource(R.drawable.gearswitchreverse);
+            mode = 1;
+            System.out.println("TIEN");
+        } else {
+            btnGearSwitch.setBackgroundResource(R.drawable.gearswitch);
+            mode = 2;
+            System.out.println("LUI");
         }
+        gearMode = !gearMode;
     }
 
     private void soundOn() {
@@ -302,15 +297,27 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
-                if ( rotateAngle >= -90f && rotateAngle <= 90f) {
-                    try {
-                        data.put("angle", Math.round(rotateAngle + 180));
-                    } catch (JSONException e) {
-                        Log.e("ERROR", e.getMessage());
+                double test = newFingerRotation - fingerRotation;
+                float oldRotateAngle = rotateAngle;
+                if (test < 90 && test > -90) {
+                    rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
+                    if ( Math.abs(oldRotateAngle - rotateAngle) > 10) {
+                        rotateAngle = oldRotateAngle;
                     }
-                    btnSteeringWheel.setRotation(rotateAngle);
                 }
+                txtPitch.setText(String.valueOf(fingerRotation));
+                txtYaw.setText(String.valueOf(newFingerRotation));
+                txtRoll.setText(String.valueOf(rotateAngle));
+                btnSteeringWheel.setRotation(rotateAngle);
+//                if ( rotateAngle >= -90f && rotateAngle <= 90f) {
+//                    try {
+//                        data.put("angle", Math.round(rotateAngle + 180));
+//                    } catch (JSONException e) {
+//                        Log.e("ERROR", e.getMessage());
+//                    }
+//                    txtRoll.setText(String.valueOf(rotateAngle + 180));
+//                    btnSteeringWheel.setRotation(rotateAngle);
+//                }
                 break;
             case MotionEvent.ACTION_UP:
                 fingerRotation = newFingerRotation = rotateAngle = 0.0f;
