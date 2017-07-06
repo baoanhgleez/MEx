@@ -165,6 +165,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         btnBrake.setBackgroundResource(R.drawable.leftpedalpressed);
                         if (SPEED_LEVEL > SPEED_LEVEL_MIN) {
                             SPEED_LEVEL -= 2;
+                            txSpeed.setText(String.valueOf(SPEED_LEVEL));
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -178,6 +179,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         btnSpeed.setBackgroundResource(R.drawable.rightpedalpressed);
                         if (SPEED_LEVEL < SPEED_LEVEL_MAX) {
                             SPEED_LEVEL += 2;
+                            txSpeed.setText(String.valueOf(SPEED_LEVEL));
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -198,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case R.id.btnGearSwitcher:
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     SPEED_LEVEL = SPEED_LEVEL_MIN;
+                    txSpeed.setText(String.valueOf(SPEED_LEVEL));
                     switchMode();
                 }
                 break;
@@ -297,27 +300,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                double test = newFingerRotation - fingerRotation;
-                float oldRotateAngle = rotateAngle;
-                if (test < 90 && test > -90) {
-                    rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
-                    if ( Math.abs(oldRotateAngle - rotateAngle) > 10) {
-                        rotateAngle = oldRotateAngle;
-                    }
-                }
-                txtPitch.setText(String.valueOf(fingerRotation));
-                txtYaw.setText(String.valueOf(newFingerRotation));
-                txtRoll.setText(String.valueOf(rotateAngle));
+                rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
                 btnSteeringWheel.setRotation(rotateAngle);
-//                if ( rotateAngle >= -90f && rotateAngle <= 90f) {
-//                    try {
-//                        data.put("angle", Math.round(rotateAngle + 180));
-//                    } catch (JSONException e) {
-//                        Log.e("ERROR", e.getMessage());
-//                    }
-//                    txtRoll.setText(String.valueOf(rotateAngle + 180));
-//                    btnSteeringWheel.setRotation(rotateAngle);
-//                }
                 break;
             case MotionEvent.ACTION_UP:
                 fingerRotation = newFingerRotation = rotateAngle = 0.0f;
