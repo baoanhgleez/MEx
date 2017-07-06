@@ -300,8 +300,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
-                btnSteeringWheel.setRotation(rotateAngle);
+                if (Math.abs((viewRotation + newFingerRotation - fingerRotation))<=90)
+                    rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
+                    btnSteeringWheel.setRotation(rotateAngle);
                 break;
             case MotionEvent.ACTION_UP:
                 fingerRotation = newFingerRotation = rotateAngle = 0.0f;
