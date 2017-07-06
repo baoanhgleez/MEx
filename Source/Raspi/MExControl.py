@@ -1,17 +1,20 @@
 import RPi.GPIO as GPIO
 import socket
 import json
+import os
+from time import gmtime, strftime
+
+## CONSTANT
+LOG_DIR = 'MEx/logs/'
+STIME = strftime("%Y-%m-%d_%H:%M:%S",gmtime())
 
 # setup GPIO
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-# create an INET, STREAMing socket
+# setup socket server
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# bind the socket to a public host, and a well-known port
 serversocket.bind(('192.168.0.1', 8002))
-# become a server socket
-# tells the socket library that we want it to queue up as many as 3 connect requests
 serversocket.listen(3)
 
 def mapValue( value, fromMin, fromMax, toMin, toMax):
@@ -99,15 +102,25 @@ class MExCar:
     def move(self, angle, speed, gear):
         self._steeringServo.rotate(angle)
 
+        # TO-DO config speed of two wheels for drift
+        if angle<45:
+            speedL=mapValue(angle, 45, 0, speed, min(1.5*speed,100))
+            speedR=mapValue(angle, 45, 0, speed, 0.5*speed)
+        elif angle>135:
+            speedR=mapValue(angle, 135, 180, speed, min(1.5*speed,100))
+            speedL=mapValue(angle, 135, 180, speed, 0.5*speed)
+        else:
+            speedL=speedR=speed
+        
         if (gear == GearMode.FORWARD):
             # Drive
-            self._motorLeft.forward(speed)
-            self._motorRigh.forward(speed)
+            self._motorLeft.forward(speedL)
+            self._motorRigh.forward(speedR)
 
         elif (gear == GearMode.BACKWARD):
             # Reverse 
-            self._motorLeft.backward(speed)
-            self._motorRigh.backward(speed)
+            self._motorLeft.backward(speedL)
+            self._motorRigh.backward(speedR)
 
         elif (gear == GearMode.PARKING):
             # Motor will not run when in Parking mode
@@ -117,8 +130,20 @@ class MExCar:
     def reset(self):
         self.move( 90, 0, GearMode.PARKING)
 
-    def __del__():
-        GPIO.cleanup()
+# create log directory in the first time
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+with open(LOG_DIR+STIME, 'w') as logFile:
+    pass
+logFile.close()
+
+def logf(content):
+    print(content)
+    with open(LOG_DIR+STIME, 'a') as f:
+        f.write(content)
+    f.close()
+    
 
 ## MAIN PROCESS
 try:
@@ -128,31 +153,50 @@ try:
     motorLeft = DCMotor(21,20)
     motorRigh = DCMotor(16,12)
 
-    piCar = MExCar(mg996r, s9gu, s9gl,, motorLeft, motorRigh)
+    piCar = MExCar(mg996r, s9gu, s9gl, motorLeft, motorRigh)
     piCar.reset()
+
+    keySet = {'angle', 'speed', 'mode'} 
 
     while True:
         # accept connections from outside
-        print('..waiting for a connection..')
+        logf('Waiting for a connection..\n')
         conn, client_adr = serversocket.accept()
-        print('Connection Address: '+str(client_adr))
+        logf('Connection Address: '+str(client_adr)+'\n')
         while True:
             data = conn.recv(1024)
+            logf('RECV: '+str(data)+'\n')
             if data == b'':
-                print('..disconnected from '+str(client_adr)+'')
+                logf('Disconnected from '+str(client_adr)+'\n')
                 conn.close()
                 break
-            order = json.loads(data.decode("ascii")
-            if {'angle', 'speed', 'mode'} == set(order.keys()):
-                piCar.move(order['angle'], order['speed'], order['mode'])
-            
-            print(order)
+
+            try:
+                order = json.loads(data.decode("ascii"))
+            except ValueError:
+                logf('ERR: Invalid JSON string!\n')
+            if (keySet == set(order.keys()) ):
+                angle = mapValue(order['angle'], 90, 270, 180, 0)
+                speed = mapValue(order['speed'], 0, 10, 0, 100)
+                if angle<0 or angle>180:
+                    logf('ERR: Invalide rotate angle')
+                else:
+                # TO-DO
+                    mode  = 3-order['mode'] #remap gear order
+                    if mode == GearMode.FORWARD:
+                        logf('FORWARD -r'+str(angle)+' -s'+str(speed)+'\n')
+                    elif mode == GearMode.BACKWARD:
+                        logf('BACKWARD -r'+str(angle)+' -s'+str(speed)+'\n')
+                    elif mode == GearMode.PARKING:
+                        logf('PARKING -r'+str(angle)+' -s0'+'\n')
+                    piCar.move(angle, speed, mode)
 
 except KeyboardInterrupt:
-    print(' Exit by interrupt ^C')
+    logf('ERR: Interrupt ^C\n')
 except Exception as error:
-    pass
+    logf('ERR: '+repr(error)+'\n')
 except:
-    print(' An error occur!')
+    logf('ERR: An error occur!\n')
 finally:
+    serversocket.close()
     GPIO.cleanup()
