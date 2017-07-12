@@ -3,19 +3,15 @@ import socket
 import json
 import os
 from time import gmtime, strftime
+from time import sleep as tdelay
 
 ## CONSTANT
-LOG_DIR = 'MEx/logs/'
+LOG_DIR = 'home/pi/MEx/logs/'
 STIME = strftime("%Y-%m-%d_%H:%M:%S",gmtime())
 
 # setup GPIO
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-
-# setup socket server
-serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serversocket.bind(('192.168.0.1', 8002))
-serversocket.listen(3)
 
 def mapValue( value, fromMin, fromMax, toMin, toMax):
     '''
@@ -27,6 +23,30 @@ def mapValue( value, fromMin, fromMax, toMin, toMax):
     return (value-fromMin)*alpha + toMin
 
 
+class Led:
+    '''
+    Define a LED
+    You can adjust brightness
+    '''
+    def __init__(self, pin, frequency=50):
+        GPIO.setup(pin, GPIO.OUT)
+        self._led = GPIO.PWM(pin, frequency)
+        self._led.start(0)
+
+    def off(self):
+        self._led.ChangeDutyCycle(0)
+        
+    def on(self, light_time=None, brightness=100):
+        self._led.ChangeDutyCycle(brightness)
+        if not (light_time == None):
+            tdelay(light_time)
+            self.off()
+
+    def blink(self, delay_time = 0.5, blink_time=1):
+        for i in range (0, blink_time):
+            self.on(light_time=delay_time)
+            tdelay(delay_time)
+        
 class Servo:
     '''
     Used for servo 9G
@@ -90,14 +110,18 @@ class GearMode:
     BACKWARD = 2
 
 class MExCar:
-    def __init__(self, steeringServo, servoUpper, servoLower,
-                 motorLeft, motorRigh):
-        self._steeringServo = steeringServo
-        self._steeringServo.rotate(84)
-        self._servoUpper = servoUpper
-        self._servoLower = servoLower
-        self._motorLeft = motorLeft
-        self._motorRigh = motorRigh
+    def __init__(self, steeringPin, motorLeft, motorRigh):
+        self._steeringServo = SteeringServo(steeringPin)
+        self._motorLeft = DCMotor(motorLeft[0], motorRigh[1])
+        self._motorRigh = DCMotor(motorRigh[0], motorRigh[1])
+
+        # create start signal
+        self._steeringServo.rotate(135)
+        tdelay(1)
+        self._steeringServo.rotate(45)
+        tdelay(1)
+        self._steeringServo.rotate(90)
+        
 
     def move(self, angle, speed, gear):
         self._steeringServo.rotate(angle)
@@ -141,55 +165,66 @@ logFile.close()
 def logf(content):
     print(content)
     with open(LOG_DIR+STIME, 'a') as f:
-        f.write(content)
+        f.write(content+'\n')
     f.close()
-    
 
+# setup led indicator
+indicator = Led(26)
+
+# setup socket server
+serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serversocket.bind(('192.168.0.1', 8002))
+serversocket.listen(3)
+indicator.blink(0.1, 3)
+
+# define motors
+mg996r = SteeringServo(14)
+s9gu = Servo(18)
+s9gl = Servo(15)
+motorLeft = DCMotor(21,20)
+motorRigh = DCMotor(16,12)
+    
 ## MAIN PROCESS
 try:
-    mg996r = SteeringServo(14)
-    s9gu = Servo(18)
-    s9gl = Servo(15)
-    motorLeft = DCMotor(21,20)
-    motorRigh = DCMotor(16,12)
 
-    piCar = MExCar(mg996r, s9gu, s9gl, motorLeft, motorRigh)
+    piCar = MExCar(mg996r, motorLeft, motorRigh)
     piCar.reset()
 
     keySet = {'angle', 'speed', 'mode'} 
 
     while True:
         # accept connections from outside
-        logf('Waiting for a connection..\n')
+        logf('Waiting for a connection..')
         conn, client_adr = serversocket.accept()
-        logf('Connection Address: '+str(client_adr)+'\n')
+        logf('Connection Address: '+str(client_adr))
+        indicator.blink(0.1, 4)
         while True:
             data = conn.recv(1024)
-            logf('RECV: '+str(data)+'\n')
+            logf('RECV: '+str(data))
             if data == b'':
-                logf('Disconnected from '+str(client_adr)+'\n')
+                logf('Disconnected from '+str(client_adr))
                 conn.close()
                 break
-
             try:
                 order = json.loads(data.decode("ascii"))
+                
+                if (keySet == set(order.keys()) ):
+                    angle = mapValue(order['angle'], 90, 270, 180, 0)
+                    speed = mapValue(order['speed'], 0, 10, 0, 100)
+                    if angle<0 or angle>180:
+                        logf('ERR: Invalid rotate angle')
+                    else:
+                    # TO-DO
+                        mode  = 3 - order['mode'] #remap gear order
+                        if mode == GearMode.FORWARD:
+                            logf('FORWARD -r'+str(angle)+' -s'+str(speed))
+                        elif mode == GearMode.BACKWARD:
+                            logf('BACKWARD -r'+str(angle)+' -s'+str(speed))
+                        elif mode == GearMode.PARKING:
+                            logf('PARKING -r'+str(angle)+' -s0')
+                        piCar.move(angle, speed, mode)
             except ValueError:
-                logf('ERR: Invalid JSON string!\n')
-            if (keySet == set(order.keys()) ):
-                angle = mapValue(order['angle'], 90, 270, 180, 0)
-                speed = mapValue(order['speed'], 0, 10, 0, 100)
-                if angle<0 or angle>180:
-                    logf('ERR: Invalide rotate angle')
-                else:
-                # TO-DO
-                    mode  = 3-order['mode'] #remap gear order
-                    if mode == GearMode.FORWARD:
-                        logf('FORWARD -r'+str(angle)+' -s'+str(speed)+'\n')
-                    elif mode == GearMode.BACKWARD:
-                        logf('BACKWARD -r'+str(angle)+' -s'+str(speed)+'\n')
-                    elif mode == GearMode.PARKING:
-                        logf('PARKING -r'+str(angle)+' -s0'+'\n')
-                    piCar.move(angle, speed, mode)
+                logf('ERR: Invalid JSON string!')
 
 except KeyboardInterrupt:
     logf('ERR: Interrupt ^C\n')
