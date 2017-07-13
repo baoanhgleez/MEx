@@ -19,8 +19,8 @@ def mapValue( value, fromMin, fromMax, toMin, toMax):
     That is, a value of fromLow would get mapped to toLow, a value of fromHigh
     to toHigh, values in-between to values in-between, etc.
     '''
-    alpha = (toMax-toMin)/(fromMax-fromMin)
-    return (value-fromMin)*alpha + toMin
+    scale = (toMax-toMin)/(fromMax-fromMin)
+    return (value-fromMin)*scale + toMin
 
 
 class Led:
@@ -60,6 +60,10 @@ class Servo:
         self._motor.ChangeDutyCycle(d)
 
     def rotate(self, angle):
+        '''
+        Process for rotating servo from 0* to 180*
+        Refuse if angle is outside of the range (0,180)
+        '''
         d=7
         if (angle < 0):
             d = 0
@@ -77,6 +81,10 @@ class SteeringServo(Servo):
         super(SteeringServo,self).__init__(pinPWM, frequency)
 
     def rotate(self, angle):
+        '''
+        Process for rotating servo from 45* to 135*
+        Refuse if angle is outside of the range (45,135)
+        '''
         d=7
         if (angle < 45):
             d = 5.5
@@ -205,6 +213,7 @@ try:
                 logf('Disconnected from '+str(client_adr))
                 conn.close()
                 break
+<<<<<<< Updated upstream
             try:
                 order = json.loads(data.decode("ascii"))
                 
@@ -230,6 +239,15 @@ except KeyboardInterrupt:
     logf('ERR: Interrupt ^C\n')
 except Exception as error:
     logf('ERR: '+repr(error)+'\n')
+=======
+            order = json.loads(data.decode("ascii")
+            if {'angle', 'speed', 'mode'} == set(order.keys()):
+                piCar.move(order['angle'], order['speed'], order['mode'])
+            print(order)
+
+except KeyboardInterrupt:
+    print(' Exit by interrupt ^C')
+>>>>>>> Stashed changes
 except:
     logf('ERR: An error occur!\n')
 finally:
