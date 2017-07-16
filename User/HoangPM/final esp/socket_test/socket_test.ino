@@ -1,18 +1,15 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <SoftwareSerial.h> 
-const char* ssid = "hoang";
-const char* pass = "johncena";
-const char* host = "192.168.137.67"; 
-int port = 9876; 
-//const char* ssid = "fakehub";         
-//const char* pass = "fakepass";  
-//char host[] = "192.168.4.1";  
-//int port = 8002; 
+const char* ssid = "RazzPi";         
+const char* pass = "123@123a";  
+char host[] = "192.168.0.1";  
+int port = 8011; 
 
-const byte RX = 4;
-const byte TX = 5;  
-SoftwareSerial unoSerial(RX, TX);     
+const byte RX1 = 4;
+const byte TX1 = 5;  
+SoftwareSerial unoSerial(RX1, TX1); 
+WiFiClient client;      
 void setup() {
   Serial.begin(115200); 
   unoSerial.begin(115200); 
@@ -25,19 +22,14 @@ void setup() {
   Serial.println();
   Serial.print("My IP: ");
   Serial.println(WiFi.localIP());
+  client.connect(host, port);
 }
 
-void loop() {
-  WiFiClient client;  
-  while (!client.connect(host, port)) {
-    Serial.print(".");
-    yield();
-  }
-  //client.println("hoangdeptrai");
-  delay(1000);
-  //String line = client.readStringUntil('\n');
-  String data = unoSerial.readStringUntil('\n');
-  client.println(data);
- // client.println("hoangdeptrai");
-  yield();
+void loop() {  
+    Serial.print(",");
+    delay(100);
+    String data = unoSerial.readStringUntil('\n');
+    Serial.println(data);
+    client.println(data);
+    //client.println("{'speed':111,'angle':222,'break':333,'mode1':444,'mode2':555,'handbreak':666}");
 } 
