@@ -5,40 +5,55 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.util.Pair;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import com.google.vr.sdk.widgets.video.VrVideoEventListener;
 import com.google.vr.sdk.widgets.video.VrVideoView;
 
 import java.io.IOException;
 
-public class VRCardBoard extends Activity {
+import static com.android.miniexplorer.Utilities.STREAMING_URL;
 
+public class VRCardBoard extends Activity{
+
+    private static final int CLICK_ON_URL = 2;
+    private static final int CLICK_ON_WEBVIEW = 1;
     protected VrVideoView videoWidgetView;
     VideoLoaderTask backgroundVideoLoaderTask;
     Uri fileUri;
     VrVideoView.Options videoOptions;
-
+    WebView wb;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_vrcard_board);
-        videoWidgetView = (VrVideoView) findViewById(R.id.video_view);
-        videoWidgetView.setEventListener(new VrVideoEventListener());
-        try {
-            VrVideoView.Options options = new VrVideoView.Options();
-            options.inputType = VrVideoView.Options.TYPE_STEREO_OVER_UNDER;
-            videoWidgetView.loadVideoFromAsset("congo.mp4", options);
-            Toast.makeText(this,"video is running",Toast.LENGTH_SHORT).show();
-        }catch (Exception ex){
-            Toast.makeText(this,"Fail to load video",Toast.LENGTH_SHORT).show();
-        }
-        //handleIntent(getIntent());
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        setFullScreen();
+//        videoWidgetView = (VrVideoView) findViewById(R.id.video_view);
+//        videoWidgetView.setEventListener(new VrVideoEventListener());
+//        try {
+//            VrVideoView.Options options = new VrVideoView.Options();
+//            options.inputType = VrVideoView.Options.TYPE_STEREO_OVER_UNDER;
+//            videoWidgetView.loadVideoFromAsset("congo.mp4", options);
+//            Toast.makeText(this,"video is running",Toast.LENGTH_SHORT).show();
+//        }catch (Exception ex){
+//            Toast.makeText(this,"Fail to load video",Toast.LENGTH_SHORT).show();
+//        }
+
+        wb = (WebView) findViewById(R.id.wb);
+        WebSettings settings = wb.getSettings();
+//        settings.setJavaScriptEnabled(true);
+//        wb.loadUrl(STREAMING_URL);
     }
 
     private void handleIntent(Intent intent) {
@@ -71,6 +86,19 @@ public class VRCardBoard extends Activity {
         backgroundVideoLoaderTask = new VideoLoaderTask();
         backgroundVideoLoaderTask.execute(Pair.create(fileUri, videoOptions));
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        wb.loadUrl(STREAMING_URL);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        wb.loadUrl("about:blank");
+    }
+
     class VideoLoaderTask extends AsyncTask<Pair<Uri, VrVideoView.Options>, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Pair<Uri, VrVideoView.Options>... fileInformation) {
@@ -150,4 +178,13 @@ public class VRCardBoard extends Activity {
 //            videoWidgetView.seekTo(0);
 //        }
 //    }
+    private void setFullScreen(){
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        );
+    }
 }
