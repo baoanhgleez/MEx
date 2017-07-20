@@ -6,4 +6,5 @@ package com.android.miniexplorer;
 
 public class Utilities {
     public static final String TAG = "MEx";
+    public static final int ANDROID_PORT = 8011;
 }
