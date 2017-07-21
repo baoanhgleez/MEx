@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void sendData() {
         flag = true;
-        Thread test = new Thread(new Runnable() {
+        Thread sendData = new Thread(new Runnable() {
             @Override
             public void run() {
                 Socket socket = null;
@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             }
         });
-        test.start();
+        sendData.start();
     }
 
     @Override

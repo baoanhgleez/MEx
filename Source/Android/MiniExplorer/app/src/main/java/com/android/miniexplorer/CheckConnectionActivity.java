@@ -11,6 +11,8 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -34,12 +36,6 @@ public class CheckConnectionActivity extends Activity {
         checkConnection();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        checkConnection();
-    }
-
     private void checkConnection() {
         if (wifiManager.isWifiEnabled() == false) {
             txtMessage.setText(getResources().getString(R.string.no_wifi));
@@ -54,8 +50,14 @@ public class CheckConnectionActivity extends Activity {
                     @Override
                     public void run() {
                         Socket socket = null;
+                        DataOutputStream dataOutputStream = null;
+
                         try {
                             socket = new Socket(serverIpAddress, Utilities.ANDROID_PORT);
+                            dataOutputStream =  new DataOutputStream(socket.getOutputStream());
+                            dataOutputStream.writeBytes("ANDROID");
+                            dataOutputStream.flush();
+
                             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                             intent.putExtra("serverIpAddress", serverIpAddress);
                             startActivity(intent);
@@ -63,12 +65,15 @@ public class CheckConnectionActivity extends Activity {
                         } catch (IOException ex) {
                             Log.e(this.getClass().getName(), ex.getMessage());
                         } finally {
-                            if (socket != null) {
-                                try {
-                                    socket.close();
-                                } catch (IOException ex) {
-                                    System.out.println(ex.getMessage());
+                            try {
+                                if (dataOutputStream != null) {
+                                    dataOutputStream.close();
                                 }
+                                if (socket != null) {
+                                    socket.close();
+                                }
+                            } catch (IOException ex) {
+                                Log.e(getClass().getName(), ex.toString());
                             }
                         }
                     }
