@@ -1,25 +1,40 @@
 from time import sleep as tdelay
 from mexutils import dutyCycle, mapValue
 
-class Led:
-    def __init__(self, pin, frequency=50):
+class LedRGB:
+    RED = (100, 0, 0)
+    GREEN = (0, 100, 0)
+    BLUE = (0, 0, 100)
+    WHITE = (100, 100, 100)
+    YELLOW = (100, 100, 0)
+    CYAN = (0, 100, 100)
+    PURPLE = (100, 0, 100)
+    
+    def __init__(self, pinR, pinG, pinB, frequency=50):
         GPIO.setup(pin, GPIO.OUT)
-        self._led = GPIO.PWM(pin, frequency)
-        self._led.start(0)
+        self._red = GPIO.PWM(pinR, frequency)
+        self._green = GPIO.PWM(pinG, frequency)
+        self._blue = GPIO.PWM(pinB, frequency)
+        self._red.start(0)
+        self._green.start(0)
+        self._blue.start(0)
 
     def off(self):
-        self._led.ChangeDutyCycle(0)
+        self._red.ChangeDutyCycle(0)
+        self._green.ChangeDutyCycle(0)
+        self._blue.ChangeDutyCycle(0)
         
-    def on(self, light_time=None, brightness=100):
-        self._led.ChangeDutyCycle(dutyCycle(brightness))
-            
+    def on(self, color, light_time=None):
+        self._red.ChangeDutyCycle(color[0])
+        self._green.ChangeDutyCycle(color[1])
+        self._blue.ChangeDutyCycle(color[2])
         if not (light_time == None):
             tdelay(light_time)
             self.off()
 
-    def blink(self, delay_time = 0.5, blink_time=1):
+    def blink(self, color, delay_time = 0.5, blink_time=1):
         for i in range(0, blink_time):
-            self.on(light_time=delay_time)
+            self.on(color, light_time=delay_time)
             tdelay(delay_time)
         
 class Servo:
