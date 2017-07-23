@@ -1,8 +1,14 @@
 import socket, json, threading
-import mexutils
 from mexutils import logf
+from mexdev import MExCar, LedRGB, Rotator
 
 class MExServer(object):
+    __MAX_ALLOW_FOR_EACH_TYPE = 1
+    __PACKAGE_SIZE = 1024
+    __ANDROID_SET = {'angle', 'speed', 'mode', 'viewX', 'viewY'}
+    __FRAME_SET = {'viewX', 'viewY'}
+    __ARDUINO_SET = {'angle', 'speed', 'mode', 'buzz', 'indicator'}
+
     def __init__(self, address='192.168.0.1', port=8011):
         self._address = address
         self._port = port
@@ -11,11 +17,12 @@ class MExServer(object):
         self._sock.bind((self._address, self._port))
         self._token = {b'ANDROID':0, b'ARDUINO':0}
         self._require = False
-        self.__MAX_ALLOW_FOR_EACH_TYPE = 1
-        self.__PACKAGE_SIZE = 1024
-        self.__ANDROID_SET = {'angle', 'speed', 'mode', 'viewX', 'viewY'}
-        self.__ARDUINO_SET = {'angle', 'speed', 'mode', 'buzz', 'indicator'}
 
+    def attach_device(self, car, framefpv, led):
+        self._car = car
+        self._frame = framefpv
+        self._led = led
+    
     def listen(self):
         self.sock.listen(5)
         while True:
@@ -31,10 +38,10 @@ class MExServer(object):
                 logf('Unable to authenticate device')
                 logf('Access Denied!')
             else:
-                if self._token[targetDev]>=self.__MAX_ALLOW_FOR_EACH_TYPE:
+                if self._token[targetDev]>=__MAX_ALLOW_FOR_EACH_TYPE:
                     client.sendall(b'LIMIT')
                     client.close()
-                    logf('Device Limitation Reached! Disconnected to device')
+                    logf('Cannot connect to device because of limitation Reached!')
                 else:
                     self._token[targetDev] +=1
                     client.sendall(b'OK')
@@ -46,35 +53,49 @@ class MExServer(object):
 
     def listentoAndroid(self, client, address):
         while True:
-            data = client.recv(self.__PACKAGE_SIZE)
-            logf('RECV: '+str(data))
+            data = client.recv(__PACKAGE_SIZE)
             if data == b'':
-                logf('Disconnected from ', address)
+                logf('Disconnected from ' + str(address), 'ANDROID')
                 self._token[b'ANDROID'] -=1
                 self._require = False    
                 client.close()
                 break;
+            
+            logf('RECV: '+str(data), 'ANDROID')
             self._require = True
             try:
                 order = json.loads(data.decode("ascii"))
-                if (self.__ANDROID_SET == set(order.keys()) ):
+                if (__ANDROID_SET == set(order.keys())):
+                    # Control Car
+                    mode  = order['mode']
                     angle = mapValue(order['angle'], 90, 270, 180, 0)
                     speed = mapValue(order['speed'], 0, 10, 0, 100)
                     if angle<0 or angle>180:
-                        logf('ERR: Invalid rotate angle')
-                    else:
-                    # TO-DO
-                        mode  = 3 - order['mode'] #remap gear order
-                        if mode == GearMode.FORWARD:
-                            logf('FORWARD -r'+str(angle)+' -s'+str(speed))
-                        elif mode == GearMode.BACKWARD:
-                            logf('BACKWARD -r'+str(angle)+' -s'+str(speed))
-                        elif mode == GearMode.PARKING:
-                            logf('PARKING -r'+str(angle)+' -s0')
+                        logf('Invalid angle data', 'ERROR')
+                        continue
+                        
+                    if mode == GearMode.FORWARD:
+                        logf('FORWARD -r'+str(angle)+' -s'+str(speed))
+                    elif mode == GearMode.BACKWARD:
+                        logf('BACKWARD -r'+str(angle)+' -s'+str(speed))
+                    elif mode == GearMode.PARKING:
+                        logf('PARKING -r'+str(angle)+' -s0')
+                    self._car.move(angle, speed, mode)
 
-                        # TO-DO: Control Car
+                    # Adjust frame
+                    viewX = order['viewX']
+                    viewY = order['viewY']
+                    self._frame.rotate(viewX, viewY)
+                    
+                elif (__FRAME_SET == set(order.keys())):
+                    
+                    # Adjust frame
+                    viewX = order['viewX']
+                    viewY = order['viewY']
+                    self._frame.rotate(viewX, viewY)
+                        
             except ValueError:
-                logf('ERR: Invalid JSON string!')
+                logf('Invalid JSON string!','ERROR')
 
     def listenToArduino(self, client, address):
         while True:
@@ -97,8 +118,7 @@ class MExServer(object):
                     if angle<0 or angle>180:
                         logf('ERR: Invalid rotate angle')
                     else:
-                    # TO-DO
-                        mode  = 3 - order['mode'] #remap gear order
+                        mode  = order['mode']
                         if mode == GearMode.FORWARD:
                             logf('FORWARD -r'+str(angle)+' -s'+str(speed))
                         elif mode == GearMode.BACKWARD:
@@ -106,7 +126,7 @@ class MExServer(object):
                         elif mode == GearMode.PARKING:
                             logf('PARKING -r'+str(angle)+' -s0')
 
-                        # TO-DO: Control Car
+                        self._car.move(angle, speed, mode)
             except ValueError:
                 logf('ERR: Invalid JSON string!')
                 

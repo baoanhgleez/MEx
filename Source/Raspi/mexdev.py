@@ -24,7 +24,7 @@ class LedRGB:
         self._green.ChangeDutyCycle(0)
         self._blue.ChangeDutyCycle(0)
         
-    def on(self, color, light_time=None):
+    def on(self, color=LedRGB.RED, light_time=None):
         self._red.ChangeDutyCycle(color[0])
         self._green.ChangeDutyCycle(color[1])
         self._blue.ChangeDutyCycle(color[2])
@@ -58,6 +58,24 @@ class Servo:
         else:
             d = mapValue(angle, 0, 180, 2, 12)
         self._changePulse(d)
+        
+
+class Rotator:
+    '''
+    Khung servo de dieu chinh camera
+    '''
+    def __init__(self, pin_servo_upper, pin_servo_lower):
+        self._servoU = Servo(pin_servo_upper)
+        self._servoL = Servo(pin_servo_lower)
+        self.reset()
+
+    def rotate(self, angleX, angleY):
+        self._servoU.rotate(angleY)
+        self._servoL.rotate(angleX)
+
+    def reset(self):
+        self.rotate(90, 90)
+        
 
 class SteeringServo(Servo):
     '''

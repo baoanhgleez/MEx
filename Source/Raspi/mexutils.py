@@ -34,10 +34,9 @@ with open(LOG_DIR+STIME, 'w') as logFile:
     pass
 logFile.close()
 
-def logf(content):
+def logf(message, tag='RASPI'):
+    content = '['+tag+'] '+content
     print(content)
     with open(LOG_DIR+STIME, 'a') as f:
         f.write(content+'\n')
     f.close()
-
-
