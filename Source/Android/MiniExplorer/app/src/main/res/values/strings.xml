@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Mini Explorer</string>
 
-    <string name="no_wifi">Wi-Fi is turned off. \n Please connect to device\'s wifi.</string>
-    <string name="no_connection">Couldn\'t not connect to server. \n Please check the connection!!!</string>
+    <string name="no_wifi">Wi-Fi is turned off. \n Please connect to device\'s wifi!</string>
+    <string name="no_connection">Couldn\'t not connect to server. \n Please check the connection!</string>
+    <string name="over_capacity">Only one android can connect to server at a time!</string>
 </resources>

@@ -11,10 +11,13 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -50,24 +53,42 @@ public class CheckConnectionActivity extends Activity {
                     @Override
                     public void run() {
                         Socket socket = null;
-                        DataOutputStream dataOutputStream = null;
-
+                        PrintWriter out = null;
+                        BufferedReader in = null;
                         try {
                             socket = new Socket(serverIpAddress, Utilities.ANDROID_PORT);
-                            dataOutputStream =  new DataOutputStream(socket.getOutputStream());
-                            dataOutputStream.writeBytes("ANDROID");
-                            dataOutputStream.flush();
+                            out =  new PrintWriter(socket.getOutputStream(), true);
+                            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                            intent.putExtra("serverIpAddress", serverIpAddress);
-                            startActivity(intent);
-                            finish();
+                            out.print("ANDROID");
+                            String response;
+                            while (((response = in.readLine()) != null)) {
+                                System.out.println("Response: " + response);
+                                if (response.contains("OK")) {
+                                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                    intent.putExtra("serverIpAddress", serverIpAddress);
+                                    startActivity(intent);
+                                    finish();
+                                }
+                                if (response.contains("NO")){
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            txtMessage.setText(getResources().getString(R.string.over_capacity));
+                                            imgMessage.setImageResource(R.drawable.icons8_offline);
+                                        }
+                                    });
+                                }
+                            }
                         } catch (IOException ex) {
                             Log.e(this.getClass().getName(), ex.getMessage());
                         } finally {
                             try {
-                                if (dataOutputStream != null) {
-                                    dataOutputStream.close();
+                                if (in != null) {
+                                    in.close();
+                                }
+                                if (out != null) {
+                                    out.close();
                                 }
                                 if (socket != null) {
                                     socket.close();
