@@ -53,18 +53,20 @@ public class CheckConnectionActivity extends Activity {
                     @Override
                     public void run() {
                         Socket socket = null;
-                        PrintWriter out = null;
+                        DataOutputStream out = null;
                         BufferedReader in = null;
                         try {
                             socket = new Socket(serverIpAddress, Utilities.ANDROID_PORT);
-                            out =  new PrintWriter(socket.getOutputStream(), true);
+                            out = new DataOutputStream(socket.getOutputStream());
                             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                            out.print("ANDROID");
+                            out.writeBytes("ANDROID");
+                            out.flush();
                             String response;
                             while (((response = in.readLine()) != null)) {
                                 System.out.println("Response: " + response);
                                 if (response.contains("OK")) {
+                                    socket.close();
                                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                                     intent.putExtra("serverIpAddress", serverIpAddress);
                                     startActivity(intent);
