@@ -11,12 +11,16 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
@@ -54,7 +58,71 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         Log.i(Utilities.TAG, "onCreate() end");
 
+//        sendData();
+        flag = true;
+        Thread threadSend = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Socket socket = null;
+                PrintWriter out =  null;
+                BufferedReader in = null;
+                try {
+                    if (serverIpAddress != null && !serverIpAddress.isEmpty()) {
+                        socket = new java.net.Socket(serverIpAddress, Utilities.ANDROID_PORT);
+                        out = new PrintWriter(socket.getOutputStream(), true);
+                        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                        out.print("ANDROID");
+                        String response;
 
+                        while (((response = in.readLine()) != null)) {
+                            System.out.println("Response: " + response);
+                            if (response.contains("OK")) {
+                                while (flag) {
+                                    try {
+                                        data.put("mode", mode);
+                                        data.put("speed", SPEED_LEVEL);
+                                        data.put("angle", Math.round(rotateAngle + 180));
+                                        Log.d("GIA TRI", data.toString());
+                                    } catch (JSONException e) {
+                                        Log.e("ERROR", e.getMessage());
+                                    }
+                                    out.println(data.toString());
+                                    Thread.sleep(100);
+                                }
+                            }
+                            if (response.contains("NO")){
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getApplicationContext(), "Cannot connect to server!", Toast.LENGTH_SHORT);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if (in != null) {
+                            in.close();
+                        }
+                        if (out != null) {
+                            out.close();
+                        }
+                        if (socket != null) {
+                            flag = false;
+                            socket.close();
+                        }
+                    } catch (IOException ex) {
+                        Log.e(getClass().getName(), ex.toString());
+                    }
+                }
+            }
+        });
+        threadSend.start();
     }
 
     private void initial_views() {
@@ -91,48 +159,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void sendData() {
-        flag = true;
-        Thread sendData = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Socket socket = null;
-                DataOutputStream outputStream = null;
-                try {
-                    if (serverIpAddress != null && !serverIpAddress.isEmpty()) {
-                        socket = new java.net.Socket(serverIpAddress, Utilities.ANDROID_PORT);
-                        outputStream = new DataOutputStream(socket.getOutputStream());
-                        while (flag) {
-                            try {
-                                data.put("mode", mode);
-                                data.put("speed", SPEED_LEVEL);
-                                data.put("angle", Math.round(rotateAngle + 180));
-                                Log.d("GIA TRI", data.toString());
-                            } catch (JSONException e) {
-                                Log.e("ERROR", e.getMessage());
-                            }
-                            outputStream.writeBytes(data.toString());
-                            outputStream.flush();
-                            Thread.sleep(100);
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (socket != null) {
-                        flag = false;
-                        try {
-                            outputStream.close();
-                            socket.close();
-                        } catch (IOException e) {
-                            Log.e("ERROR", e.getMessage());
-                        }
-                    }
-                }
-            }
-        });
-        sendData.start();
+
     }
 
     @Override
