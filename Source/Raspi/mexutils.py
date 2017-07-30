@@ -1,7 +1,7 @@
 from time import strftime,  gmtime
 
 ## CONSTANT
-ACT_DIR = 'home/pi/mex/'
+ACT_DIR = '/home/pi/MEx/'
 LOG_DIR = 'logs/'
 STIME = strftime("%Y-%m-%d_%H:%M:%S",gmtime())
 
@@ -22,6 +22,11 @@ def mapValue( value, fromMin, fromMax, toMin, toMax):
     alpha = (toMax-toMin)/(fromMax-fromMin)
     return (value-fromMin)*alpha + toMin
 
+class GearMode:
+    PARKING  = 0
+    FORWARD  = 1
+    BACKWARD = 2
+
 import os
 if os.getcwd()!=ACT_DIR:
     os.chdir(ACT_DIR)
@@ -35,7 +40,7 @@ with open(LOG_DIR+STIME, 'w') as logFile:
 logFile.close()
 
 def logf(message, tag='RASPI'):
-    content = '['+tag+'] '+content
+    content = '['+tag+'] '+message
     print(content)
     with open(LOG_DIR+STIME, 'a') as f:
         f.write(content+'\n')

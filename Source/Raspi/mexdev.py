@@ -1,5 +1,6 @@
+import RPi.GPIO as GPIO
 from time import sleep as tdelay
-from mexutils import dutyCycle, mapValue
+from mexutils import dutyCycle, mapValue, GearMode
 
 class LedRGB:
     RED = (100, 0, 0)
@@ -11,10 +12,14 @@ class LedRGB:
     PURPLE = (100, 0, 100)
     
     def __init__(self, pinR, pinG, pinB, frequency=50):
-        GPIO.setup(pin, GPIO.OUT)
+        GPIO.setup(pinR, GPIO.OUT)
+        GPIO.setup(pinG, GPIO.OUT)
+        GPIO.setup(pinB, GPIO.OUT)
+        
         self._red = GPIO.PWM(pinR, frequency)
         self._green = GPIO.PWM(pinG, frequency)
         self._blue = GPIO.PWM(pinB, frequency)
+        
         self._red.start(0)
         self._green.start(0)
         self._blue.start(0)
@@ -24,18 +29,24 @@ class LedRGB:
         self._green.ChangeDutyCycle(0)
         self._blue.ChangeDutyCycle(0)
         
-    def on(self, color=LedRGB.RED, light_time=None):
+    def on(self, color=RED, light_time=None):
         self._red.ChangeDutyCycle(color[0])
         self._green.ChangeDutyCycle(color[1])
         self._blue.ChangeDutyCycle(color[2])
-        if not (light_time == None):
+        
+        if light_time != None:
             tdelay(light_time)
             self.off()
 
-    def blink(self, color, delay_time = 0.5, blink_time=1):
-        for i in range(0, blink_time):
-            self.on(color, light_time=delay_time)
-            tdelay(delay_time)
+    def blink(self, color=RED, delay_time = 0.5, blink_time=None):
+        if blink_time==None:
+            while True:
+                self.on(color, delay_time)
+                tdelay(delay_time)
+        else:
+            for i in range(0, blink_time):
+                self.on(color, delay_time)
+                tdelay(delay_time)
         
 class Servo:
     '''
@@ -47,7 +58,7 @@ class Servo:
         self._motor.start(0)
 
     def _changePulse(self, d):
-        self._motor.ChangeDutyCycle(d)
+        self._motor.ChangeDutyCycle(dutyCycle(d))
 
     def rotate(self, angle):
         d=7
@@ -81,19 +92,21 @@ class SteeringServo(Servo):
     '''
     Used for servo MG996R
     '''
+    __ANGLE_45_DUTY = 4.5
+    __ANGLE_135_DUTY = 9.5
     def __init__(self, pinPWM, frequency=50):
         super(SteeringServo,self).__init__(pinPWM, frequency)
 
     def rotate(self, angle):
         d=7
-        # TO-DO: remap value of steering servo
         if (angle < 45):
-            d = 5.5 #TO-DO
+            d = self.__ANGLE_45_DUTY 
         elif (angle > 135):
-            d = 8.5 #TO-DO
+            d = self.__ANGLE_135_DUTY
         else:
-            d = mapValue(angle, 45, 135, 5.5, 8.5)
+            d = mapValue(angle, 45, 135, self.__ANGLE_45_DUTY, self.__ANGLE_135_DUTY)
         self._motor.ChangeDutyCycle(d)
+        
         return d
 
 class DCMotor:
@@ -112,11 +125,6 @@ class DCMotor:
     def backward(self, speed):
         self._pinA.ChangeDutyCycle(0)
         self._pinB.ChangeDutyCycle(dutyCycle(speed))
-
-class GearMode:
-    PARKING  = 0
-    FORWARD  = 1
-    BACKWARD = 2
 
 class MExCar:
     def __init__(self, steeringPin, motorLeft, motorRigh):
