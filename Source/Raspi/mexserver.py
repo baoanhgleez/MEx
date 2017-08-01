@@ -1,4 +1,5 @@
 import socket, json, threading
+from time import sleep as tdelay
 import RPi.GPIO as GPIO
 from mexutils import logf, mapValue, GearMode
 from mexdev import MExCar, LedRGB, Rotator
@@ -19,6 +20,9 @@ class MExManager():
     __car_info = {'speed':0, 'led':0, 'buzz':0}
     
     _indicator_flag = False
+
+    def __del__(self):
+        GPIO.cleanup()
 
     def __init__(self, sock_info, devices):
         # attach devices
@@ -66,14 +70,13 @@ class MExManager():
                     logf('Access Denied!')
                 else:
                     self._led.blink(LedRGB.GREEN, 0.1, 5)
-                    self._led.on(LedRGB.BLUE)
                     client.settimeout(self.__TIMEOUT_DEFAULT)
                     self._token[authenString] +=1
                     client.sendall(b'OK\n')
-                    logf('Connected to an '+authenStoring+' device at address '+str(address))
+                    logf('Connected to an '+authenString+' device at address '+str(address))
                     if authenString=='ANDROID':
                         threading.Thread(target = self.listenToAndroid,args = (client,address)).start()
-                        #threading.Thread(target = self.sendCarInfo,args = (client,address)).start()
+                        threading.Thread(target = self.sendCarInfo,args = (client,address)).start()
                     elif authenString=='ARDUINO':
                         threading.Thread(target = self.listenToArduino,args = (client,address)).start()
         except socket.timeout:
@@ -85,8 +88,12 @@ class MExManager():
         auto send status of car to android
         '''
         while True:
-            car_info = json.dumps(self.__car_info)
-            client.sendall(car_info.encode()+b'\n')
+            try:
+                car_info = json.dumps(self.__car_info)
+                client.sendall(car_info.encode()+b'\n')
+                tdelay(5)
+            except BrokenPipeError:
+                break
 
     def controlCar(self, angle_, speed_, mode_):
         mode  = mode_
@@ -126,6 +133,10 @@ class MExManager():
                 data = client.recv(self.__PACKAGE_SIZE)
             except socket.timeout:
                 self.disconnect(client, address, 'ANDROID', 'Time out!')
+                self._require = False
+                break
+            except ConnectionResetError:
+                self.disconnect(client, address, 'ANDROID', 'Connection reset by peer')
                 self._require = False
                 break
                 
@@ -185,11 +196,13 @@ class MExManager():
                     else:
                         break
                     
+                logf(raw,'ARDUINO')
+                    
                 order = json.loads(raw)
                 if (self.__ARDUINO_SET == set(order.keys()) ):
                     self.controlCar(order['angle'], order['speed'], order['mode'])
 
-                    led, buzz = order['led'], order['buzz']
+                    led = order['led']
                     self.__car_info['led'] = led
                     self.__car_info['buzz'] = buzz
                     if led == 1:
@@ -204,9 +217,9 @@ class MExManager():
                 
                 
 if __name__ == "__main__":
-    piCar = MExCar(14, (21, 20), (16, 12))
+    piCar = MExCar(14, (20, 21), (12, 16))
     frame = Rotator(18, 15)
-    indicator = LedRGB(5, 6, 13)
+    indicator = LedRGB(13, 6, 5)
 
     sock=('192.168.0.1',8011)
     MExManager(sock, (piCar, frame, indicator)).listen()
