@@ -118,6 +118,10 @@ class DCMotor:
         self._pinA.start(0)
         self._pinB.start(0)
 
+    def stop(self):
+        self._pinA.ChangeDutyCycle(0)
+        self._pinB.ChangeDutyCycle(0)
+        
     def forward(self, speed):
         self._pinB.ChangeDutyCycle(0)
         self._pinA.ChangeDutyCycle(dutyCycle(speed))
@@ -129,14 +133,15 @@ class DCMotor:
 class MExCar:
     def __init__(self, steeringPin, motorLeft, motorRigh):
         self._steeringServo = SteeringServo(steeringPin)
-        self._motorLeft = DCMotor(motorLeft[0], motorRigh[1])
+        self._motorLeft = DCMotor(motorLeft[0], motorLeft[1])
         self._motorRigh = DCMotor(motorRigh[0], motorRigh[1])
+        
 
-        # create start signal
+        # create start signal        
         self._steeringServo.rotate(135)
-        tdelay(1)
+        tdelay(0.5)
         self._steeringServo.rotate(45)
-        tdelay(1)
+        tdelay(0.5)
         self._steeringServo.rotate(90)
         
 
@@ -144,14 +149,13 @@ class MExCar:
         self._steeringServo.rotate(angle)
 
         # TO-DO config speed of two wheels for drift
+        speedL=speedR=speed
         if angle<45:
             speedL=mapValue(angle, 45, 0, speed, 1.5*speed)
             speedR=mapValue(angle, 45, 0, speed, 0.5*speed)
         elif angle>135:
             speedR=mapValue(angle, 135, 180, speed, 1.5*speed)
             speedL=mapValue(angle, 135, 180, speed, 0.5*speed)
-        else:
-            speedL=speedR=speed
         
         if (gear == GearMode.FORWARD):
             # Drive
@@ -165,8 +169,8 @@ class MExCar:
 
         elif (gear == GearMode.PARKING):
             # Motor will not run when in Parking mode
-            self._motorLeft.backward(0)
-            self._motorRigh.backward(0)
+            self._motorLeft.stop()
+            self._motorRigh.stop()
 
     def reset(self):
         self.move( 90, 0, GearMode.PARKING)
