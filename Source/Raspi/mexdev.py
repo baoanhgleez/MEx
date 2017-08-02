@@ -130,6 +130,22 @@ class DCMotor:
         self._pinA.ChangeDutyCycle(0)
         self._pinB.ChangeDutyCycle(dutyCycle(speed))
 
+
+class Buzzer():
+    def __init__(self, buzzer_pin):
+        self._pin= buzzer_pin
+        GPIO.setup(self._pin, GPIO.OUT)
+
+    def buzz(self, pitch, duration=1):
+        if (pitch!=0):                
+            period = 1.0/pitch
+            delay = period / 2
+            cycles= int(duration * pitch)
+            for i in range(cycles):
+                GPIO.output(self._pin, True)
+                time.sleep(delay)
+                GPIO.output(self._pin, False)
+
 class MExCar:
     def __init__(self, steeringPin, motorLeft, motorRigh):
         self._steeringServo = SteeringServo(steeringPin)
