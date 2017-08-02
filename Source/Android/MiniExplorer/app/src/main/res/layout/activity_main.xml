@@ -71,9 +71,9 @@
 
         <Button
             android:id="@+id/btnGearSwitcher"
-            android:layout_width="40dp"
-            android:layout_height="98dp"
-            android:background="@drawable/gearswitch"
+            android:layout_width="70dp"
+            android:layout_height="120dp"
+            android:background="@drawable/parkingmode"
             android:layout_above="@id/btnSpeed"
             android:layout_alignParentRight="true"
             android:layout_marginBottom="20dp"/>
