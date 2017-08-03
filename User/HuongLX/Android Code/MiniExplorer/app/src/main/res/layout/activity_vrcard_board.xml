@@ -1,26 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.android.miniexplorer.VRCardBoard">
+    tools:context="com.android.miniexplorer.VRCardBoard"
+    android:layout_weight="2">
 
-    <!--<com.google.vr.sdk.base.GvrView-->
-        <!--android:id="@+id/gvr_view"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:layout_alignParentTop="true"-->
-        <!--android:layout_alignParentLeft="true""/>-->
-    <!--<com.google.vr.sdk.widgets.video.VrVideoView-->
-        <!--android:id="@+id/video_view"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:scrollbars="none"-->
-        <!--android:layout_height="match_parent"/>-->
     <WebView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true"
         android:id="@+id/wb">
     </WebView>
-</FrameLayout>
+</RelativeLayout>

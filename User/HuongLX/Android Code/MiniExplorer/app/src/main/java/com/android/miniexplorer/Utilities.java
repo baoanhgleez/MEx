@@ -6,5 +6,5 @@ package com.android.miniexplorer;
 
 public class Utilities {
     public static final String TAG = "MEx";
-    public static final String STREAMING_URL = "http://192.168.1.22:8012";
+    public static final String STREAMING_URL = "http://192.168.0.1:8012";
 }
