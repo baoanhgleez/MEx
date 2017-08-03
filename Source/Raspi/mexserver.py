@@ -12,7 +12,7 @@ class MExManager():
     __PACKAGE_SIZE = 1024
     __ANDROID_SET = {'angle', 'speed', 'mode', 'viewX', 'viewY'}
     __FRAME_SET = {'viewX', 'viewY'}
-    __ARDUINO_SET = {'angle', 'speed', 'mode', 'buzz', 'led'}
+    __ARDUINO_SET = {'angle', 'speed', 'mode', 'buzzer', 'led'}
 
     __AUTHENTICATE_TIME = 5     # device has time to send authenString
     __TIMEOUT_DEFAULT= 30     # Auto disconnect after 3mins
@@ -183,7 +183,7 @@ class MExManager():
                 break
             
             if data == b'':
-                self.disconnect(client, address, 'ANDROID', 'Disconnect request from user')
+                self.disconnect(client, address, 'ARDUINO', 'Disconnect request from user')
                 break
             
             logf('RECV: '+str(data), 'ARDUINO')
