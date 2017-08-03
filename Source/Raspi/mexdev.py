@@ -92,8 +92,8 @@ class SteeringServo(Servo):
     '''
     Used for servo MG996R
     '''
-    __ANGLE_45_DUTY = 4.5
-    __ANGLE_135_DUTY = 9.5
+    __ANGLE_45_DUTY = 9.5
+    __ANGLE_135_DUTY = 4.5
     def __init__(self, pinPWM, frequency=50):
         super(SteeringServo,self).__init__(pinPWM, frequency)
 
