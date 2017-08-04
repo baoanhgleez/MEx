@@ -7,6 +7,14 @@
     tools:context="com.android.miniexplorer.MainActivity"
     android:background="@color/clouds">
 
+    <!--HuongLX Start
+        Add webview to background-->
+    <WebView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/wb">
+    </WebView>
+    <!--HuongLX End-->
     <RelativeLayout
         android:id="@+id/controlLayout"
         android:layout_margin="@dimen/activity_horizontal_margin"
@@ -71,13 +79,19 @@
 
         <Button
             android:id="@+id/btnGearSwitcher"
-            android:layout_width="40dp"
-            android:layout_height="98dp"
-            android:background="@drawable/gearswitch"
+            android:layout_width="70dp"
+            android:layout_height="120dp"
+            android:background="@drawable/parkingmode"
             android:layout_above="@id/btnSpeed"
             android:layout_alignParentRight="true"
             android:layout_marginBottom="20dp"/>
-
+        <Button
+            android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:layout_toRightOf="@+id/btnStreeringWheel"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/vr_button_icon"
+            android:id="@+id/btnVr"/>
     </RelativeLayout>
 
     <RelativeLayout

@@ -15,11 +15,18 @@
             android:name=".MainActivity"
             android:configChanges="keyboardHidden|orientation"
             android:screenOrientation="landscape"></activity>
-        <activity android:name=".CheckConnectionActivity">
+        <activity android:name=".CheckConnectionActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".VRCardBoard"
+            android:screenOrientation="sensorLandscape">
+            <intent-filter>
+                <action android:name="android.intent.action.LAUCHER_VR_MODE"/>
             </intent-filter>
         </activity>
     </application>

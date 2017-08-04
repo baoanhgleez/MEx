@@ -7,6 +7,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -18,16 +19,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 
-public class CheckConnectionActivity extends Activity {
+public class CheckConnectionActivity extends Activity implements Serializable {
 
     TextView txtMessage;
-    ImageView imgMessage;
+    ImageButton btnConnect;
     WifiManager wifiManager;
 
     @Override
@@ -42,12 +44,10 @@ public class CheckConnectionActivity extends Activity {
     private void checkConnection() {
         if (wifiManager.isWifiEnabled() == false) {
             txtMessage.setText(getResources().getString(R.string.no_wifi));
-            imgMessage.setImageResource(R.drawable.icons8_offline);
+            btnConnect.setImageResource(R.drawable.icons8_offline);
         } else {
             String ipString = getIpAddress();
             if (ipString != null && !ipString.isEmpty()) {
-                txtMessage.setText(getResources().getString(R.string.no_connection));
-                imgMessage.setImageResource(R.drawable.icons8_offline);
                 final String serverIpAddress = getServerIpAddress(ipString);
                 Thread connect = new Thread(new Runnable() {
                     @Override
@@ -57,30 +57,38 @@ public class CheckConnectionActivity extends Activity {
                         BufferedReader in = null;
                         try {
                             socket = new Socket(serverIpAddress, Utilities.ANDROID_PORT);
-                            out =  new PrintWriter(socket.getOutputStream(), true);
+                            out = new PrintWriter(socket.getOutputStream(), true);
                             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                             out.print("ANDROID");
+                            out.flush();
                             String response;
                             while (((response = in.readLine()) != null)) {
                                 System.out.println("Response: " + response);
                                 if (response.contains("OK")) {
+                                    SocketHandler.setSocket(socket);
                                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                    intent.putExtra("serverIpAddress", serverIpAddress);
                                     startActivity(intent);
                                     finish();
                                 }
-                                if (response.contains("NO")){
+                                if (response.contains("LIMIT")){
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
                                             txtMessage.setText(getResources().getString(R.string.over_capacity));
-                                            imgMessage.setImageResource(R.drawable.icons8_offline);
+                                            btnConnect.setImageResource(R.drawable.icons8_offline);
                                         }
                                     });
                                 }
                             }
                         } catch (IOException ex) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtMessage.setText(getResources().getString(R.string.no_connection));
+                                    btnConnect.setImageResource(R.drawable.icons8_offline);
+                                }
+                            });
                             Log.e(this.getClass().getName(), ex.getMessage());
                         } finally {
                             try {
@@ -91,6 +99,7 @@ public class CheckConnectionActivity extends Activity {
                                     out.close();
                                 }
                                 if (socket != null) {
+                                    SocketHandler.closeSocket();
                                     socket.close();
                                 }
                             } catch (IOException ex) {
@@ -100,6 +109,9 @@ public class CheckConnectionActivity extends Activity {
                     }
                 });
                 connect.start();
+            } else {
+                txtMessage.setText(getResources().getString(R.string.no_connection));
+                btnConnect.setImageResource(R.drawable.icons8_offline);
             }
         }
     }
@@ -140,11 +152,11 @@ public class CheckConnectionActivity extends Activity {
 
     private void initComponent() {
         txtMessage = (TextView) findViewById(R.id.txtMessage);
-        imgMessage = (ImageView) findViewById(R.id.imgMessage);
+        btnConnect = (ImageButton) findViewById(R.id.btnConnect);
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-        imgMessage.setOnClickListener(new View.OnClickListener() {
+        btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 checkConnection();
