@@ -3,6 +3,8 @@ from time import strftime,  gmtime
 ## CONSTANT
 ACT_DIR = '/home/pi/MEx/'
 LOG_DIR = 'logs/'
+ANDROID_TAG = 'ANDROID'
+ARDUINO_TAG = 'ARDUINO'
 STIME = strftime("%Y-%m-%d_%H:%M:%S",gmtime())
 
 def dutyCycle(value):

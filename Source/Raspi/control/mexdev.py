@@ -2,6 +2,10 @@ import RPi.GPIO as GPIO
 from time import sleep as tdelay
 from mexutils import dutyCycle, mapValue, GearMode
 
+
+GPIO.setmode(BCM)
+GPIO.setwarnings(False)
+
 class LedRGB:
     RED = (100, 0, 0)
     GREEN = (0, 100, 0)
@@ -151,7 +155,6 @@ class MExCar:
         self._steeringServo = SteeringServo(steeringPin)
         self._motorLeft = DCMotor(motorLeft[0], motorLeft[1])
         self._motorRigh = DCMotor(motorRigh[0], motorRigh[1])
-        
 
         # create start signal        
         self._steeringServo.rotate(135)
@@ -159,6 +162,9 @@ class MExCar:
         self._steeringServo.rotate(45)
         tdelay(0.5)
         self._steeringServo.rotate(90)
+
+    def __del__(self):
+        GPIO.cleanup()
         
 
     def move(self, angle, speed, gear):
@@ -193,9 +199,6 @@ class MExCar:
 
 
 def __main():
-    import RPi.GPIO as GPIO
-    GPIO.setmode(BCM)
-    GPIO.setwarnings(False)
 
 if __name__ == '__main__':
     __main()
