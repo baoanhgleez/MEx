@@ -66,11 +66,13 @@ class Indicator
 		{
 			state = 0;
 			digitalWrite(ledLeft, LOW);
+      digitalWrite(ledRigh, LOW);
 		}
 		else
 		{
 			state = 1;
 			digitalWrite(ledLeft, HIGH);
+      digitalWrite(ledRigh, LOW);
 		}
 		}
 		else
@@ -80,11 +82,13 @@ class Indicator
 			{
 			state = 0;
 			digitalWrite(ledRigh, LOW);
+      digitalWrite(ledLeft, LOW);
 			}
 			else
 			{
 			state = 2;
 			digitalWrite(ledRigh, HIGH);
+      digitalWrite(ledLeft, LOW);
 			}
 		}
 	}
@@ -127,12 +131,12 @@ class Buzzer
 	{
 		if (digitalRead(btnBuzzer) == HIGH)
 		{
-		state = 1;
-		buzz(100);
+		  state = 1;
+		  buzz(100);
 		}
 		else
 		{
-		state = 0;
+		  state = 0;
 		}
 	}
 	void buzz(int time)
@@ -187,8 +191,8 @@ class Controller
 		this->btnParking = btnParking;
 		pinMode(ledParking, OUTPUT);
 		this->ledParking = ledParking;
-		this->indicator = new Indicator(btnLeft, btnRigh, ledLeft, ledRigh);
-		this->buzzer = new Buzzer(btnBuzzer, pinBuzzer, ledBuzzer);
+		this->indicator = (new Indicator(btnLeft, btnRigh, ledLeft, ledRigh));
+		this->buzzer = (new Buzzer(btnBuzzer, pinBuzzer, ledBuzzer));
 		
 		init();
 	}
@@ -263,7 +267,7 @@ class Controller
 		byte state = indicator->getState();
 		if (state != 0)
 		{
-		buzzer->buzz(100);
+		  buzzer->buzz(100);
 		}
 		return state;
 	}
