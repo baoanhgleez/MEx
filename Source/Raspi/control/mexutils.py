@@ -7,6 +7,23 @@ ANDROID_TAG = 'ANDROID'
 ARDUINO_TAG = 'ARDUINO'
 STIME = strftime("%Y-%m-%d_%H:%M:%S",gmtime())
 
+def getJson(string):
+    while (len(string)>2) and (string[0]!='{'):
+        string = string[1:]
+    if string[0]!='{':
+        return ''
+
+    closePos = -1
+    for i in range(1, len(string)):
+        if string[i]=='}':
+            closePos = i
+            break
+        
+    if closePos == -1 :
+        return ''
+    else:
+        return string[:closePos+1]
+
 def dutyCycle(value):
     if value<0:
         return 0
@@ -28,6 +45,15 @@ class GearMode:
     PARKING  = 0
     FORWARD  = 1
     BACKWARD = 2
+
+class LedColor:
+    RED = (100, 0, 0)
+    GREEN = (0, 100, 0)
+    BLUE = (0, 0, 100)
+    WHITE = (100, 100, 100)
+    YELLOW = (100, 100, 0)
+    CYAN = (0, 100, 100)
+    PURPLE = (100, 0, 100)
 
 import os
 if os.getcwd()!=ACT_DIR:

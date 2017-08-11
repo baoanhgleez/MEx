@@ -1,19 +1,11 @@
 import RPi.GPIO as GPIO
+import threading
 from time import sleep as tdelay
 from mexutils import dutyCycle, mapValue, GearMode
+from mexutils import LedColor
 
-
-GPIO.setmode(BCM)
-GPIO.setwarnings(False)
 
 class LedRGB:
-    RED = (100, 0, 0)
-    GREEN = (0, 100, 0)
-    BLUE = (0, 0, 100)
-    WHITE = (100, 100, 100)
-    YELLOW = (100, 100, 0)
-    CYAN = (0, 100, 100)
-    PURPLE = (100, 0, 100)
     
     def __init__(self, pinR, pinG, pinB, frequency=50):
         GPIO.setup(pinR, GPIO.OUT)
@@ -33,7 +25,7 @@ class LedRGB:
         self._green.ChangeDutyCycle(0)
         self._blue.ChangeDutyCycle(0)
         
-    def on(self, color=RED, light_time=None):
+    def on(self, color=LedColor.RED, light_time=None):
         self._red.ChangeDutyCycle(color[0])
         self._green.ChangeDutyCycle(color[1])
         self._blue.ChangeDutyCycle(color[2])
@@ -42,7 +34,7 @@ class LedRGB:
             tdelay(light_time)
             self.off()
 
-    def blink(self, color=RED, delay_time = 0.5, blink_time=None):
+    def blink(self, color=LedColor.RED, delay_time = 0.5, blink_time=None):
         if blink_time==None:
             while True:
                 self.on(color, delay_time)
@@ -74,30 +66,17 @@ class Servo:
             d = mapValue(angle, 0, 180, 2, 12)
         self._changePulse(d)
         
-
-class Rotator:
-    '''
-    Khung servo de dieu chinh camera
-    '''
-    def __init__(self, pin_servo_upper, pin_servo_lower):
-        self._servoU = Servo(pin_servo_upper)
-        self._servoL = Servo(pin_servo_lower)
-        self.reset()
-
-    def rotate(self, angleX, angleY):
-        self._servoU.rotate(angleY)
-        self._servoL.rotate(angleX)
-
     def reset(self):
-        self.rotate(90, 90)
+        self.rotate(90)
+        
         
 
 class SteeringServo(Servo):
     '''
     Used for servo MG996R
     '''
-    __ANGLE_45_DUTY = 9.5
-    __ANGLE_135_DUTY = 4.5
+    __ANGLE_45_DUTY = 8.5
+    __ANGLE_135_DUTY = 5.5
     def __init__(self, pinPWM, frequency=50):
         super(SteeringServo,self).__init__(pinPWM, frequency)
 
@@ -108,7 +87,7 @@ class SteeringServo(Servo):
         elif (angle > 135):
             d = self.__ANGLE_135_DUTY
         else:
-            d = mapValue(angle, 45, 135, self.__ANGLE_45_DUTY, self.__ANGLE_135_DUTY)
+            d = mapValue(angle, 0, 180, self.__ANGLE_45_DUTY, self.__ANGLE_135_DUTY)
         self._motor.ChangeDutyCycle(d)
         
         return d
@@ -147,10 +126,59 @@ class Buzzer():
             cycles= int(duration * pitch)
             for i in range(cycles):
                 GPIO.output(self._pin, True)
-                time.sleep(delay)
+                tdelay(delay)
                 GPIO.output(self._pin, False)
 
+class Indicators:
+    '''
+    Use to control led indicators in car
+    '''
+    
+    def __init__(self, indicatorLeft, indicatorRigh):
+        self._ledLeft = LedRGB(indicatorLeft[0], indicatorLeft[1], indicatorLeft[2])
+        self._ledRigh = LedRGB(indicatorRigh[0], indicatorRigh[1], indicatorRigh[2])
+        self.__indicatorState = 0     # trang thai cua xi nhan, 0:tat, 1:left, 2:righ
+    
+    def lightOn(self, color=LedColor.WHITE):
+        self._ledLeft.on(color)
+        self._ledRigh.on(color)
+    
+    def lightOff(self):
+        self._ledLeft.off()
+        self._ledRigh.off()
+
+    def blink(self, color=LedColor.WHITE, delay=0.1, time=1 ):
+        for i in range(time):
+            self.lightOn(color)
+            tdelay(delay)
+            self.lightOff()
+
+    def leftIndicate(self):
+        while True:
+            if (self.__indicatorState == 1):
+                self._ledLeft.blink(LedColor.YELLOW, 1)
+            else:
+                self._ledLeft.off()
+                break;
+    
+    def righIndicate(self):
+        while True:
+            if (self.__indicatorState == 2):
+                self._ledRigh.blink(LedColor.YELLOW, 1)
+            else:
+                self._ledRigh.off()
+                break;
+
+    def setIndicate(self, state):
+        self.__indicatorState = state
+        if state == 1 :
+            threading.Thread(target=self.leftIndicate, args=()).start()
+        elif state == 2 :
+            threading.Thread(target=self.leftIndicate, args=()).start()
+        
+
 class MExCar:
+    
     def __init__(self, steeringPin, motorLeft, motorRigh):
         self._steeringServo = SteeringServo(steeringPin)
         self._motorLeft = DCMotor(motorLeft[0], motorLeft[1])
@@ -197,8 +225,3 @@ class MExCar:
     def reset(self):
         self.move( 90, 0, GearMode.PARKING)
 
-
-def __main():
-
-if __name__ == '__main__':
-    __main()

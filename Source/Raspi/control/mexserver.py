@@ -1,8 +1,8 @@
 import socket, json, threading
 from time import sleep as tdelay
 import RPi.GPIO as GPIO
-from mexutils import logf, mapValue, GearMode
-from mexdev import MExCar, LedRGB, Rotator
+from mexutils import *
+from mexdev import MExCar, Indicators, Servo, Buzzer
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
@@ -10,14 +10,14 @@ GPIO.setwarnings(False)
 class MExManager():
     __MAX_ALLOW = 1
     __PACKAGE_SIZE = 1024
-    __ANDROID_SET = {'angle', 'speed', 'mode', 'viewX', 'viewY'}
-    __FRAME_SET = {'viewX', 'viewY'}
+    __CONTROL_SET = {'angle', 'speed', 'mode', 'buzzer', 'led'}
+    __FRAME_SET = {'viewX'}
     __ARDUINO_SET = {'angle', 'speed', 'mode', 'buzzer', 'led'}
 
     __AUTHENTICATE_TIME = 5     # device has time to send authenString
-    __TIMEOUT_DEFAULT= 30     # Auto disconnect after several seconds
+    __TIMEOUT_DEFAULT= 20       # Auto disconnect after several seconds
     
-    __car_info = {'speed':0, 'led':0, 'buzz':0}
+    __car_info = {'speed':0, 'mode':0, 'angle':0, 'led':0, 'buzz':0}
     
     _indicator_flag = False
 
@@ -28,7 +28,8 @@ class MExManager():
         # attach devices
         self._car = devices[0]
         self._frame = devices[1]
-        self._led = devices[2]
+        self._indicator = devices[2]
+        self._buzzer = devices[3]
         
         # setup socket server
         self._address = sock_info[0]
@@ -42,20 +43,27 @@ class MExManager():
         self._require = False
         self._indicator_flag = False
     
+
     
     def listen(self):
         self._sock.listen(5)
         logf('Waiting for a connection..')
-        self._led.on(LedRGB.WHITE)
+        self._indicator.lightOn()
         while True:
-            client, address = self._sock.accept()
-            logf('Request connection from '+str(address))
-            threading.Thread(target = self.authenDevice,args = (client,address)).start()
+            try:
+                client, address = self._sock.accept()
+                logf('Request connection from '+str(address))
+                threading.Thread(target = self.authenDevice,args = (client,address)).start()
+            except Exception as e:
+                logf('Exception occur: '+str(e))
             
     def authenDevice(self, client, address):
         try:
             client.settimeout(self.__AUTHENTICATE_TIME)
             authenString = client.recv(10).decode('ascii')
+            if authenString =='':
+                logf('Device disconnected to server')
+                return
             logf('Device name: '+authenString)
             if authenString not in set(self._token.keys()):
                 client.sendall(b'NO\n')
@@ -69,11 +77,13 @@ class MExManager():
                     logf('Limitation Reached!')
                     logf('Access Denied!')
                 else:
-                    self._led.blink(LedRGB.GREEN, 0.1, 5)
+                    self._indicator.blink(LedColor.GREEN, 0.1, 5)
+                  
+                    # set timeout cho thiet bi duoc ket noi
                     client.settimeout(self.__TIMEOUT_DEFAULT)
                     self._token[authenString] +=1
                     client.sendall(b'OK\n')
-                    logf('Connected to an '+authenString+str(address))
+                    logf('Connected to a/an '+authenString+str(address))
                     if authenString==ANDROID_TAG:
                         threading.Thread(target = self.listenToAndroid,args = (client,address)).start()
                         threading.Thread(target = self.sendCarInfo,args = (client,address)).start()
@@ -82,6 +92,11 @@ class MExManager():
         except socket.timeout:
             logf('Time out to authenticate device')
             logf('Force close connection')
+            client.close()
+        except Exception as e:
+            logf('Exception occur ' + str(e))
+            logf('Force close connection')
+            client.close()
 
     def sendCarInfo(self, client, address):
         '''
@@ -93,15 +108,17 @@ class MExManager():
                 client.sendall(car_info.encode()+b'\n')
                 tdelay(5)
             except BrokenPipeError:
+                logf('Broken pipe to ANDROID'+str(address))
                 break
-            except:
+            except Exception as e:
+                logf('Exception occur :'+ str(e))
                 break
                 
 
     def controlCar(self, angle_, speed_, mode_):
         mode  = mode_
         angle = mapValue(angle_, 90, 270, 180, 0)
-        speed = mapValue(speed_, 0, 10, 0, 100)
+        speed = speed_
         if angle<0 or angle>180:
             logf('Invalid angle data', 'ERROR')
             return
@@ -114,19 +131,22 @@ class MExManager():
             logf('PARKING -r'+str(angle)+' -s0')
 
         self.__car_info['speed']=speed
+        self.__car_info['angle']=angle
+        self.__car_info['mode']=mode
         self._car.move(angle, speed, mode)
 
-    
-    def disconnect(self, client, address, devName, reason):
-        self._indicator_flag = True
-        self._led.blink(LedRGB.RED, 0.1, 5)
-        self._indicator_flag = False
+    def controlLedBuzz(self, led_, buzzer_):
+        if led_==1:
+            logf('Indicator LEFT')
+        elif led_ == 2:
+            logf('Indicator RIGH')
+        self.__car_info['led'] = led_
+        self._indicator.setIndicate(led_)
 
-        logf(reason, devName)
-        self._token[devName] -=1
-        
-        logf('Close connection to '+devName+'('+str(address)+')') 
-        client.close()
+        if buzzer_!=0:
+            logf('Buzz ON')
+            self._buzzer.buzz(1000)
+        self.__car_info['buzzer'] = buzzer_
 
     
     def listenToAndroid(self, client, address):
@@ -143,32 +163,30 @@ class MExManager():
                 self._require = False
                 break
             if data == b'':
-                self.disconnect(client, address, ANDROID_TAG, 'Disconnect request from user')
+                self.disconnect(client, address, ANDROID_TAG, 'Device disconnected to server')
                 self._require = False
                 break
             
             logf('RECV: '+str(data), ANDROID_TAG)
             try:
-                order = json.loads(data.decode("ascii"))
-                                        
-                if ('speed' not in set(order.keys())) or ('mode' not in set(order.keys())) or ('angle'not in set(order.keys())):
-                    logf('Missing parameter for CAR control')
-                    # unlock controller
-                    self._require = False
-                else:
-                    # lock controller
-                    self._require = True 
-                    # Control Car
-                    self.controlCar(order['angle'], order['speed'], order['mode'])
+                data = getJson(data.decode("ascii"))
+                if data == '':
+                    logf('Can not detect JSON string')
+                    continue
+                  
+                logf('Detected JSON String: '+data)
+                order = json.loads(data)
 
-                if ('viewX' not in set(order.keys())) or ('viewY' not in set(order.keys())):
-                    logf('Missing parameter for ajusting view frame')
-                else:
-                    # Adjust frame
-                    viewX = order['viewX']
-                    viewY = order['viewY']
-                    self._frame.rotate(viewX, viewY)
-                                    
+                if 'vr' not in set(order.keys()):
+                    raise ValueError
+                elif order['vr']==1:
+                    self._require = False
+                    self._frame.rotate(order['angle']) #  view angle, not steering angle
+                elif order['vr']==0:
+                    self._require = True
+                    self.controlCar(order['angle'], order['speed'], order['mode'])
+                    self.controlLedBuzz(order['led'], order['buzzer'])
+                    
             except ValueError:
                 logf('Invalid JSON string!','ERROR')
                 
@@ -185,45 +203,44 @@ class MExManager():
                 break
             
             if data == b'':
-                self.disconnect(client, address, ARDUINO_TAG, 'Disconnect request from user')
+                self.disconnect(client, address, ARDUINO_TAG, 'Device disconnected to server')
                 break
             
             logf('RECV: '+str(data), ARDUINO_TAG)
             try:
-                #  pre-process raw data from Arduino
-                raw = data.decode("ascii")
-                while raw[0]!='{':
-                    if len(raw)>1:
-                        raw = raw[1:]
-                    else:
-                        break
+                data = getJson(data.decode("ascii"))
+                if data == '':
+                    logf('Can not detect JSON string')
+                    continue
                     
-                logf(raw,ARDUINO_TAG)
-                    
-                order = json.loads(raw)
-                if (self.__ARDUINO_SET == set(order.keys()) ):
-                    self.controlCar(order['angle'], order['speed'], order['mode'])
-
-                    led = order['led']
-                    self.__car_info['led'] = led
-                    self.__car_info['buzz'] = buzz
-                    if led == 1:
-                        logf('Indicator LEFT',ARDUINO_TAG)
-                    elif led == 2:
-                        logf('Indicator RIGHT',ARDUINO_TAG)
-                    if buzz>0:
-                        logf('BUZZ BUZZ',ARDUINO_TAG)
-                else:
-                	logf('Missing parameter', ARDUINO_TAG)
+                logf('Detected JSON String: '+data)
+                order = json.loads(data)
+                self.controlCar(order['angle'], order['speed'], order['mode'])
+                self.controlLedBuzz(order['led'], order['buzzer'])
             except ValueError:
                 logf('ERR: Invalid JSON string!',ARDUINO_TAG)
+            except Exception as e:
+                logf('Exception occur: '+str(e))
+
+        
+    def disconnect(self, client, address, devName, reason):
+        self._indicator_flag = True
+        self._indicator.blink(LedColor.RED, 0.1, 5)
+        self._indicator_flag = False
+
+        logf(reason, devName)
+        self._token[devName] -=1
+        
+        logf('Close connection to '+devName+str(address)) 
+        client.close()
 
                 
                 
 if __name__ == "__main__":
     piCar = MExCar(14, (20, 21), (12, 16))
-    frame = Rotator(18, 15)
-    indicator = LedRGB(13, 6, 5)
+    frame = Servo(15)
+    indicator = Indicators((13, 6, 5), (22, 27, 17))
+    buzzer = Buzzer(26)
 
     sock=('192.168.0.1',8011)
-    MExManager(sock, (piCar, frame, indicator)).listen()
+    MExManager(sock, (piCar, frame, indicator, buzzer)).listen()
