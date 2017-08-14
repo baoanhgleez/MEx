@@ -56,7 +56,7 @@ class Indicator
 		this->ledRigh = ledRigh;
 		state = 0;
 		digitalWrite(ledLeft, LOW);
-		digitalWrite(ledLeft, HIGH);
+		digitalWrite(ledRigh, LOW);
 	}
 	byte getState()
 	{
@@ -211,10 +211,12 @@ class Controller
 	{
 		if (digitalRead(btnParking) == HIGH)
 		{
-		mode = 0;
+		  mode = 0;
+      digitalWrite(ledParking, HIGH)
 		}
 		else
 		{
+      digitalWrite(ledParking, LOW)
 		// Expected: R3 & L3 tra ve gia tri 0, 1
 		// if (digitalRead(gearL3)==0){
 		// return 1;
@@ -248,13 +250,13 @@ class Controller
 		else
 		{
 		int pedalInput = analogRead(pedalSpeed);
-		if (pedalInput < RELEASE_PEDAL_SPEED)
+		if (pedalInput < abs(RELEASE_PEDAL_SPEED-5)) // -5 la sai so trong qua trinh lay du lieu
 		{
 			// co nhan ga
 			speed = map(pedalInput, RELEASE_PEDAL_SPEED, MAXPUSH_PEDAL_SPEED, 10, 100);
 		}
 		pedalInput = analogRead(pedalBrake);
-		if (pedalInput < RELEASE_PEDAL_BRAKE)
+		if (pedalInput < abs(RELEASE_PEDAL_BRAKE-5))
 		{
 			// co nhan phanh
 			speed = map(pedalInput, MAXPUSH_PEDAL_BRAKE, RELEASE_PEDAL_BRAKE, 0, speed);
