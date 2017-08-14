@@ -153,28 +153,16 @@ class Indicators:
             tdelay(delay)
             self.lightOff()
 
-    def leftIndicate(self):
-        while True:
-            if (self.__indicatorState == 1):
-                self._ledLeft.blink(LedColor.YELLOW, 1)
-            else:
-                self._ledLeft.off()
-                break;
-    
-    def righIndicate(self):
-        while True:
-            if (self.__indicatorState == 2):
-                self._ledRigh.blink(LedColor.YELLOW, 1)
-            else:
-                self._ledRigh.off()
-                break;
-
     def setIndicate(self, state):
         self.__indicatorState = state
-        if state == 1 :
-            threading.Thread(target=self.leftIndicate, args=()).start()
-        elif state == 2 :
-            threading.Thread(target=self.leftIndicate, args=()).start()
+        if (state==1):
+            self._ledLeft.blink(LedColor.YELLOW, 0.2, 1)
+            self._ledRigh.off()
+        elif (state==2):
+            self._ledRigh.blink(LedColor.YELLOW, 0.2, 1)
+            self._ledLeft.off()
+        else:
+            self.lightOff()
         
 
 class MExCar:

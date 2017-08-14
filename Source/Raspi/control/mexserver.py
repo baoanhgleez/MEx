@@ -233,8 +233,7 @@ class MExManager():
         
         logf('Close connection to '+devName+str(address)) 
         client.close()
-
-                
+        
                 
 if __name__ == "__main__":
     piCar = MExCar(14, (20, 21), (12, 16))
