@@ -22,10 +22,10 @@ const int MIN_WHEEL = 0;
 const int MAX_WHEEL = 1023;
 const int MIN_ANGLE = 90;
 const int MAX_ANGLE = 270;
-const int MAXPUSH_PEDAL_SPEED = 565;
-const int RELEASE_PEDAL_SPEED = 1015;
-const int MAXPUSH_PEDAL_BRAKE = 515;
-const int RELEASE_PEDAL_BRAKE = 1015;
+const int MAXPUSH_PEDAL_SPEED = 570;
+const int RELEASE_PEDAL_SPEED = 1020;
+const int MAXPUSH_PEDAL_BRAKE = 520;
+const int RELEASE_PEDAL_BRAKE = 1020;
 
 
 class Indicator
@@ -62,36 +62,36 @@ class Indicator
 	{
 		if (digitalRead(btnLeft) == HIGH)
 		{
-		if (state == 1)
-		{
-			state = 0;
-			digitalWrite(ledLeft, LOW);
-      digitalWrite(ledRigh, LOW);
-		}
-		else
-		{
-			state = 1;
-			digitalWrite(ledLeft, HIGH);
-      digitalWrite(ledRigh, LOW);
-		}
-		}
-		else
-		if (digitalRead(btnRigh) == HIGH)
-		{
-			if (state == 2)
+			if (state == 1)
 			{
 			state = 0;
+			digitalWrite(ledLeft, LOW);
 			digitalWrite(ledRigh, LOW);
-      digitalWrite(ledLeft, LOW);
 			}
 			else
 			{
-			state = 2;
-			digitalWrite(ledRigh, HIGH);
-      digitalWrite(ledLeft, LOW);
+				state = 1;
+				digitalWrite(ledLeft, HIGH);
+				digitalWrite(ledRigh, LOW);
+			}
+		}
+		else if (digitalRead(btnRigh) == HIGH)
+		{
+			if (state == 2)
+			{
+				state = 0;
+				digitalWrite(ledRigh, LOW);
+				digitalWrite(ledLeft, LOW);
+			}
+			else
+			{
+				state = 2;
+				digitalWrite(ledRigh, HIGH);
+				digitalWrite(ledLeft, LOW);
 			}
 		}
 	}
+
 	String toString()
 	{
 		return String(state);
@@ -131,12 +131,12 @@ class Buzzer
 	{
 		if (digitalRead(btnBuzzer) == HIGH)
 		{
-		  state = 1;
-		  buzz(100);
+			state = 1;
+			buzz(100);
 		}
 		else
 		{
-		  state = 0;
+			state = 0;
 		}
 	}
 	void buzz(int time)
@@ -196,50 +196,58 @@ class Controller
 		
 		init();
 	}
+
 	void init()
 	{
 		angle = 180;
 		speed = 0;
 		mode = 0;
 	}
+
 	int getAngle()
 	{
 		angle = map(analogRead(wheel), MAX_WHEEL, MIN_WHEEL, MIN_ANGLE, MAX_ANGLE);
 		return angle;
 	}
+
 	int getMode()
 	{
 		if (digitalRead(btnParking) == HIGH)
 		{
-		  mode = 0;
-      digitalWrite(ledParking, HIGH)
+			mode = 0;
+			digitalWrite(ledParking, HIGH);
 		}
 		else
 		{
-      digitalWrite(ledParking, LOW)
-		// Expected: R3 & L3 tra ve gia tri 0, 1
-		// if (digitalRead(gearL3)==0){
-		// return 1;
-		// }else if (digitalRead(gearR3)==0){
-		// return 2;
-		// }
-		// Actual: R3 va L3 ko tra ve gia tri 0, 1
-		int L3 = analogRead(gearL3);
-		int R3 = analogRead(gearR3);
-		if (L3 < 100 && R3 >= 100)
-		{
-			mode = 1;
-			buzzer->buzz(100);
-		}
-		else
-			if (R3 < 100 && L3 >= 100)
+			digitalWrite(ledParking, LOW);
+			// Expected: R3 & L3 tra ve gia tri 0, 1
+			// if (digitalRead(gearL3)==0){
+			// return 1;
+			// }else if (digitalRead(gearR3)==0){
+			// return 2;
+			// }
+			// Actual: R3 va L3 ko tra ve gia tri 0, 1
+			int L3 = analogRead(gearL3);
+			int R3 = analogRead(gearR3);
+			if (L3 < 100 && R3 >= 100)
 			{
-			mode = 2;
-			buzzer->buzz(100);
+				if (mode!=1){
+					mode = 1;
+					buzzer->buzz(100);
+				}
 			}
+			else
+				if (R3 < 100 && L3 >= 100)
+				{
+					if (mode!=2){
+					mode = 2;
+					buzzer->buzz(100);
+					}
+				}
 		}
 		return mode;
 	}
+
 	int getSpeed()
 	{
 		if ((mode == 0) || (analogRead(handBrake) < 3))
@@ -250,13 +258,13 @@ class Controller
 		else
 		{
 		int pedalInput = analogRead(pedalSpeed);
-		if (pedalInput < abs(RELEASE_PEDAL_SPEED-5)) // -5 la sai so trong qua trinh lay du lieu
+		if (pedalInput < abs(RELEASE_PEDAL_SPEED-20)) // -5 la sai so trong qua trinh lay du lieu
 		{
 			// co nhan ga
 			speed = map(pedalInput, RELEASE_PEDAL_SPEED, MAXPUSH_PEDAL_SPEED, 10, 100);
 		}
 		pedalInput = analogRead(pedalBrake);
-		if (pedalInput < abs(RELEASE_PEDAL_BRAKE-5))
+		if (pedalInput < abs(RELEASE_PEDAL_BRAKE-20))
 		{
 			// co nhan phanh
 			speed = map(pedalInput, MAXPUSH_PEDAL_BRAKE, RELEASE_PEDAL_BRAKE, 0, speed);
