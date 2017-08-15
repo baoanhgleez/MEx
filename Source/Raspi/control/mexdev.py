@@ -82,9 +82,9 @@ class SteeringServo(Servo):
 
     def rotate(self, angle):
         d=7
-        if (angle < 45):
+        if (angle < 0):
             d = self.__ANGLE_45_DUTY 
-        elif (angle > 135):
+        elif (angle > 180):
             d = self.__ANGLE_135_DUTY
         else:
             d = mapValue(angle, 0, 180, self.__ANGLE_45_DUTY, self.__ANGLE_135_DUTY)
