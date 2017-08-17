@@ -1,5 +1,6 @@
 package com.android.miniexplorer;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -7,10 +8,15 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
+
+import com.android.miniexplorer.Handler.IpAddressHandler;
+import com.android.miniexplorer.Handler.SocketHandler;
+import com.github.nisrulz.sensey.RotationAngleDetector;
+import com.github.nisrulz.sensey.Sensey;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,25 +25,44 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     //Declare variables
     RelativeLayout controlLayout;
-    Button btnSteeringWheel, btnSpeed, btnBrake, btnGearSwitch;
-    Button btnSignalLeft, btnSignalRight, btnSpeaker;
-    RelativeLayout infoLayout;
-    ImageView ledSignalLeft, ledSignalRight;
-    TextView txSpeed;
+    Button btnSteeringWheel;
+    Button btnSpeed;
+    Button btnBrake;
+    Button btnGearSwitch;
+    Button btnSpeaker;
+    Button btnSignalLeft;
+    Button btnSignalRight;
+    Button btnVr;
+    ImageButton btnDisconnect;
 
     GestureDetector gestureDetector;
+    WebView webView;
+    double gearSwitchMidPoint;
+
     boolean flag = true;
+    int buzzer = 0;
+    int vr = 0;
     JSONObject data = new JSONObject();
     static int mode = 0;
     static int SPEED_LEVEL_MIN = 0;
     static int SPEED_LEVEL = 0;
-    static int SPEED_LEVEL_MAX = 10;
+    static int SPEED_LEVEL_MAX = 100;
+    static double vrRotateAngle = 90;
+    RotationAngleDetector.RotationAngleListener rotationAngleListener;
+    double Amin = 0;
+    double Amax = 0;
+    double Bmin = 0;
+    double Bmax = 180;
+    double A = 0;
+    double B = 0;
+    boolean initial = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +81,35 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         sendData();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Utilities.setFullScreen(getWindow());
+        if (IpAddressHandler.getServerIpAddress() != null && !IpAddressHandler.getServerIpAddress().isEmpty()) {
+            webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAM_NORMAL_URL);
+        } else {
+            webView.loadUrl("about:blank");
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        webView.loadUrl("about:blank");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        webView.loadUrl("about:blank");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Sensey.getInstance().stop();
+    }
+
     private void initial_views() {
         controlLayout = (RelativeLayout) findViewById(R.id.controlLayout);
 
@@ -63,34 +117,65 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         btnSpeed = (Button) findViewById(R.id.btnSpeed);
         btnBrake = (Button) findViewById(R.id.btnBrake);
         btnGearSwitch = (Button) findViewById(R.id.btnGearSwitcher);
-
         btnSpeaker = (Button) findViewById(R.id.btnSpeaker);
         btnSignalLeft = (Button) findViewById(R.id.btnTurnLeft);
         btnSignalRight = (Button) findViewById(R.id.btnTurnRight);
+        btnVr = (Button) findViewById(R.id.btnVr);
+        btnDisconnect = (ImageButton) findViewById(R.id.btnDisconnect);
+        webView = (WebView) findViewById(R.id.webView);
 
         // set event handler
         btnSteeringWheel.setOnTouchListener(this);
         btnSpeed.setOnTouchListener(this);
         btnBrake.setOnTouchListener(this);
         btnGearSwitch.setOnTouchListener(this);
-
         btnSpeaker.setOnTouchListener(this);
         btnSignalRight.setOnTouchListener(this);
         btnSignalLeft.setOnTouchListener(this);
+        btnVr.setOnTouchListener(this);
+        btnDisconnect.setOnTouchListener(this);
 
-        infoLayout = (RelativeLayout) findViewById(R.id.infoLayout);
-        ledSignalLeft = (ImageView) findViewById(R.id.ledTurnLeft);
-        ledSignalRight = (ImageView) findViewById(R.id.ledTurnRight);
-        txSpeed = (TextView) findViewById(R.id.txSpeed);
+        Sensey.getInstance().init(getApplicationContext());
+        rotationAngleListener = new RotationAngleDetector.RotationAngleListener() {
+            @Override
+            public void onRotation(float v, float v1, float v2) {
+                if (initial) {
+                    A = v;
+                    initial = false;
+                    Amin = v - 90;
+                    Amax = v + 90;
+                }
+                B = (v-Amin)/(Amax-Amin) * (Bmax-Bmin) + Bmin;
+                Log.d(getClass().getName(), String.valueOf(B));
+            }
+        };
 
-        // turn off leds
-        ledSignalLeft.setVisibility(ImageView.GONE);
-        ledSignalRight.setVisibility(ImageView.GONE);
 
-        //gesture detector
+        //Gesture detector
         gestureDetector = new GestureDetector(this, new GestureDetector.OnGestureListener() {
             @Override
             public boolean onDown(MotionEvent e) {
+                gearSwitchMidPoint = btnGearSwitch.getY();
+                if (e.getY() <= gearSwitchMidPoint) {
+                    if (mode > 0) {
+                        mode -= 1;
+                        SPEED_LEVEL = 0;
+                    }
+                } else if (e.getY() > gearSwitchMidPoint) {
+                    if (mode < 2) {
+                        mode += 1;
+                        SPEED_LEVEL = 0;
+                    }
+                }
+                if (mode == 0) {
+                    btnGearSwitch.setBackgroundResource(R.drawable.parkingmode);
+                }
+                if (mode == 1) {
+                    btnGearSwitch.setBackgroundResource(R.drawable.drivemode);
+                }
+                if (mode == 2) {
+                    btnGearSwitch.setBackgroundResource(R.drawable.reversemode);
+                }
                 return false;
             }
 
@@ -125,8 +210,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         break;
                     case 3:
                         if (mode < 2) {
-                            SPEED_LEVEL = 0;
                             mode += 1;
+                            SPEED_LEVEL = 0;
                         }
                         break;
                 }
@@ -146,6 +231,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void sendData() {
         flag = true;
+
+//        Socket socket = SocketHandler .getSocket();
+//        PrintWriter out = new
         Thread threadSend = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -153,28 +241,30 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 DataOutputStream out = null;
                 BufferedReader in = null;
                 try {
-                        out = new DataOutputStream(socket.getOutputStream());
-                        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    out = new DataOutputStream(socket.getOutputStream());
+                    in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                        while (flag) {
-                            try {
+                    while (flag) {
+                        data = new JSONObject();
+                        try {
+                            if (vr == 0) {
+                                data.put("vr", vr);
                                 data.put("mode", mode);
                                 data.put("speed", SPEED_LEVEL);
                                 data.put("angle", Math.round(rotateAngle + 180));
-                                //xinhan
-                                //speed gui ve
-                                //headtracker
-                                Log.d("GIA TRI", data.toString());
-                            } catch (JSONException e) {
-                                Log.e("ERROR", e.getMessage());
+                                data.put("buzzer", buzzer);
+                                data.put("led", signalTurnFlag);
+                            } else if (vr == 1) {
+                                data.put("vr", vr);
+                                data.put("angle", vrRotateAngle);
                             }
-                            out.writeBytes(data.toString());
-                            out.flush();
-                            Thread.sleep(100);
+                        } catch (JSONException e) {
+                            Log.e("ERROR", e.getMessage());
                         }
-
-                        /*Todo Sửa lại luồng làm việc của thread gửi/nhận hiện giờ chỉ gửi data khi nhận được response ok*/
-                        /*Todo Sửa lại việc kết nối: Ý tưởng là socket (t1 CheckConnectionActivity) -> MainActivity -> t2(socket)*/
+                        out.writeBytes(data.toString());
+                        out.flush();
+                        Thread.sleep(100);
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -215,8 +305,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         btnBrake.setBackgroundResource(R.drawable.leftpedalpressed);
                         if (mode != 0) {
                             if (SPEED_LEVEL > SPEED_LEVEL_MIN) {
-                                SPEED_LEVEL -= 2;
-                                txSpeed.setText(String.valueOf(SPEED_LEVEL));
+                                SPEED_LEVEL -= 10;
                             }
                         }
                         break;
@@ -231,8 +320,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         btnSpeed.setBackgroundResource(R.drawable.rightpedalpressed);
                         if (mode != 0) {
                             if (SPEED_LEVEL < SPEED_LEVEL_MAX) {
-                                SPEED_LEVEL += 2;
-                                txSpeed.setText(String.valueOf(SPEED_LEVEL));
+                                SPEED_LEVEL += 10;
                             }
                         }
                         break;
@@ -243,7 +331,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
 
             case R.id.btnSpeaker:
-                soundOn();
+                soundOn(event);
                 break;
 
             case R.id.btnTurnLeft:
@@ -254,6 +342,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case R.id.btnGearSwitcher:
                 gestureDetector.onTouchEvent(event);
                 break;
+
+            case R.id.btnDisconnect:
+                Intent intentCheckActivity = new Intent(getApplicationContext(), CheckConnectionActivity.class);
+                startActivity(intentCheckActivity);
+                break;
+            case R.id.btnVr:
+                Intent intentVrActivity = new Intent(this, VRCardBoard.class);
+                vr = 1;
+                webView.loadUrl("about:blank");
+                startActivity(intentVrActivity);
         }
         return false;
     }
@@ -275,34 +373,31 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         if (action == MotionEvent.ACTION_UP) {
 
             if (id == R.id.btnTurnLeft) {
-                // if the left-led is turning on, turn of signal.
+                // if the left-led is on, turn it off.
                 if (signalTurnFlag == 1) {
                     signalTurnFlag = 0;
-                    ledSignalLeft.setVisibility(ImageView.GONE);
                 } else {
-                    if (signalTurnFlag == 2) { // turn off right-led if it's on
-                        ledSignalRight.setVisibility(ImageView.GONE);
-                    }
                     signalTurnFlag = 1;
-                    ledSignalLeft.setVisibility(ImageView.VISIBLE);
-
                 }
             } else { // do the same for right-led
                 if (signalTurnFlag == 2) {
                     signalTurnFlag = 0;
-                    ledSignalRight.setVisibility(ImageView.GONE);
                 } else {
-                    if (signalTurnFlag == 1) {
-                        ledSignalLeft.setVisibility(ImageView.GONE);
-                    }
                     signalTurnFlag = 2;
-                    ledSignalRight.setVisibility(ImageView.VISIBLE);
                 }
             }
         }
     }
 
-    private void soundOn() {
+    private void soundOn(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                buzzer = 1;
+                break;
+            case MotionEvent.ACTION_UP:
+                buzzer = 0;
+                break;
+        }
     }
 
 
@@ -323,22 +418,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                viewRotation = btnSteeringWheel.getRotation();
                 fingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
                 break;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                if (Math.abs((viewRotation + newFingerRotation - fingerRotation)) <= 90)
-                    rotateAngle = (float) (viewRotation + newFingerRotation - fingerRotation);
+                if (Math.abs(newFingerRotation - fingerRotation) < 90.0f)
+                    rotateAngle = (float) ((newFingerRotation - fingerRotation));
                 btnSteeringWheel.setRotation(rotateAngle);
                 break;
             case MotionEvent.ACTION_UP:
                 fingerRotation = newFingerRotation = rotateAngle = 0.0f;
-                try {
-                    data.put("angle", Math.round(rotateAngle + 180));
-                } catch (JSONException e) {
-                    Log.e("ERROR", e.getMessage());
-                }
                 btnSteeringWheel.setRotation(rotateAngle);
                 break;
         }
@@ -360,7 +449,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         if (angle >= 135 && angle < 180 || angle < -135 && angle > -180)
             // left
             return 2;
-        if (angle < -45 && angle>= -135)
+        if (angle < -45 && angle >= -135)
             // down
             return 3;
         if (angle > -45 && angle <= 45)
@@ -368,4 +457,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return 4;
         return 0;
     }
+
+
+
 }

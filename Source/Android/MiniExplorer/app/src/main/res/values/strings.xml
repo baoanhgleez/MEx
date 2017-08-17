@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Mini Explorer</string>
-
-    <string name="no_wifi">Wi-Fi is turned off.</string>
-    <string name="no_connection">Couldn\'t not connect to server. \n Please check the connection!</string>
-    <string name="over_capacity">Only one android can connect to server at a time!</string>
+    <string name="device_model">Audi A1 Sportback</string>
+    <string name="no_wifi">Wi-Fi is turned off. \n Please check your wifi setting.</string>
+    <string name="no_connection">Could not connect to server. \n Please check the connection.</string>
+    <string name="over_capacity">Only one android device can connect to server at a time. \n Disconnect previous connection or reset device\'s server. </string>
 </resources>
