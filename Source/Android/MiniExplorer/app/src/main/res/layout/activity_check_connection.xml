@@ -1,48 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/green_sea"
     tools:context="com.android.miniexplorer.CheckConnectionActivity">
 
-    <TextView
-        android:id="@+id/txtAppName"
+    <ImageView
+        android:id="@+id/imgTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/title" />
+
+
+    <Button
+        android:id="@+id/btnConnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_margin="@dimen/margin_larger"
-        android:text="@string/app_name"
-        android:textColor="@color/clouds"
-        android:textSize="@dimen/text_largest" />
+        android:layout_centerVertical="true"
+        android:background="@drawable/rectangle_button"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:text="Connect"
+        android:textAlignment="center"
+        android:textSize="24dp" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnConnect"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:visibility="invisible" />
 
     <TextView
         android:id="@+id/txtMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/btnConnect"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_marginTop="@dimen/margin_largest"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:paddingTop="20dp"
         android:textAlignment="center"
-        android:textColor="@color/clouds"
-        android:textSize="@dimen/text_normal" />
-
-    <ImageView
-        android:id="@+id/imgMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/txtMessage"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="@dimen/margin_normal"
-        android:src="@drawable/icons8_offline"/>
-
-    <ProgressBar
-        android:id="@+id/prgBar"
-        style="?android:attr/progressBarStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/imgMessage"
-        android:layout_centerHorizontal="true"
+        android:textSize="18dp"
         android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/txtDeviceModel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:text="@string/device_model"
+        android:textStyle="italic" />
 </RelativeLayout>

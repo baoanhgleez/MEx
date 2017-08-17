@@ -4,114 +4,109 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.android.miniexplorer.MainActivity"
-    android:background="@color/clouds">
+    android:background="@color/clouds"
+    tools:context="com.android.miniexplorer.MainActivity">
+
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/white"></WebView>
 
     <RelativeLayout
         android:id="@+id/controlLayout"
-        android:layout_margin="@dimen/activity_horizontal_margin"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_margin="@dimen/activity_horizontal_margin"
         android:gravity="bottom">
 
-        <Button android:id="@+id/btnStreeringWheel"
+        <Button
+            android:id="@+id/btnStreeringWheel"
             android:layout_width="150dp"
             android:layout_height="150dp"
-            android:background="@drawable/steeringwheel"
-            android:scaleType="center"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"/>
+            android:layout_alignParentLeft="true"
+            android:background="@drawable/steeringwheel"
+            android:scaleType="center" />
 
         <Button
             android:id="@+id/btnTurnLeft"
-            android:background="@drawable/turnleft"
             android:layout_width="70dp"
             android:layout_height="32dp"
-            android:layout_alignParentLeft="true"
             android:layout_above="@id/btnStreeringWheel"
-            android:layout_marginRight="5dp"/>
+            android:layout_alignParentLeft="true"
+            android:layout_marginBottom="10dp"
+            android:layout_marginRight="5dp"
+            android:background="@drawable/turnleft" />
 
         <Button
             android:id="@+id/btnTurnRight"
-            android:background="@drawable/turnrigh"
             android:layout_width="70dp"
             android:layout_height="32dp"
             android:layout_above="@id/btnStreeringWheel"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="5dp"
             android:layout_toRightOf="@id/btnTurnLeft"
-            android:layout_marginLeft="5dp"/>
+            android:background="@drawable/turnrigh" />
 
-        <Button android:id="@+id/btnSpeed"
-            android:background="@drawable/rightpedal"
+        <Button
+            android:id="@+id/btnVr"
+            android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:layout_toRightOf="@+id/btnStreeringWheel"
+            android:background="@drawable/vr_button_icon" />
+
+        <ImageButton
+            android:id="@+id/btnDisconnect"
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginRight="15dp"
+            android:background="@drawable/disconnect_button"
+            android:padding="5dp"
+            android:src="@drawable/icons8_disconnected" />
+
+        <Button
+            android:id="@+id/btnSpeed"
             android:layout_width="70dp"
             android:layout_height="115dp"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
-            android:layout_marginLeft="5dp"/>
+            android:layout_marginLeft="5dp"
+            android:background="@drawable/rightpedal" />
 
         <!--Còi-->
         <Button
             android:id="@+id/btnSpeaker"
-            android:background="@color/transparent"
-            android:layout_alignTop="@+id/btnStreeringWheel"
-            android:layout_alignRight="@+id/btnStreeringWheel"
-            android:layout_alignEnd="@+id/btnStreeringWheel"
-            android:layout_marginRight="55dp"
-            android:layout_marginEnd="55dp"
-            android:layout_marginTop="55dp"
             android:layout_width="40dp"
-            android:layout_height="40dp"/>
+            android:layout_height="40dp"
+            android:layout_alignEnd="@+id/btnStreeringWheel"
+            android:layout_alignRight="@+id/btnStreeringWheel"
+            android:layout_alignTop="@+id/btnStreeringWheel"
+            android:layout_marginEnd="55dp"
+            android:layout_marginRight="55dp"
+            android:layout_marginTop="55dp"
+            android:background="@color/transparent" />
 
-        <Button android:id="@+id/btnBrake"
-            android:background="@drawable/leftpedal"
+        <Button
+            android:id="@+id/btnBrake"
             android:layout_width="70dp"
             android:layout_height="86dp"
             android:layout_alignParentBottom="true"
             android:layout_toLeftOf="@+id/btnSpeed"
-            android:layout_toStartOf="@+id/btnSpeed" />
+            android:layout_toStartOf="@+id/btnSpeed"
+            android:background="@drawable/leftpedal" />
 
         <Button
             android:id="@+id/btnGearSwitcher"
-            android:layout_width="40dp"
-            android:layout_height="98dp"
-            android:background="@drawable/gearswitch"
+            android:layout_width="70dp"
+            android:layout_height="120dp"
             android:layout_above="@id/btnSpeed"
             android:layout_alignParentRight="true"
-            android:layout_marginBottom="20dp"/>
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/parkingmode" />
 
     </RelativeLayout>
-
-    <RelativeLayout
-        android:id="@+id/infoLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="@dimen/activity_horizontal_margin">
-
-        <ImageView
-            android:id="@+id/ledTurnLeft"
-            android:layout_width="35dp"
-            android:layout_height="29dp"
-            android:background="@drawable/turnleftled"
-            android:layout_marginRight="5dp"
-            />
-        <ImageView
-            android:id="@+id/ledTurnRight"
-            android:layout_width="35dp"
-            android:layout_height="29dp"
-            android:background="@drawable/turnrightled"
-            android:layout_toRightOf="@id/ledTurnLeft"
-            android:layout_marginLeft="5dp"
-            />
-        <TextView
-            android:id="@+id/txSpeed"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:text="60km/h"
-            android:textSize="10pt"
-            android:fontFamily="serif-monospace"
-            android:textColor="@color/asbestos"
-            />
-
-    </RelativeLayout>
-
 </RelativeLayout>
