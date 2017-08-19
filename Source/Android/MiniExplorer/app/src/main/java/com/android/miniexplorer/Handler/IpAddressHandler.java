@@ -1,9 +1,5 @@
 package com.android.miniexplorer.Handler;
 
-/**
- * Created by Phong on 8/10/2017.
- */
-
 public class IpAddressHandler {
 
     private static String deviceIpAddress;
