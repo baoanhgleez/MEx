@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="false">
+        <shape android:shape="ring">
+            <size android:height="100dp"/>
+            <size android:width="100dp"/>
+            <solid android:color="@color/jungle_green"/>
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="ring">
+            <solid android:color="@color/deep_jungle_green"/>
+        </shape>
+    </item>
+</selector>

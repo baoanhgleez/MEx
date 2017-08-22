@@ -24,9 +24,9 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
-import java.util.Timer;
 
 public class CheckConnectionActivity extends Activity implements Serializable {
 
@@ -35,7 +35,8 @@ public class CheckConnectionActivity extends Activity implements Serializable {
     ProgressBar progressBar;
     Button btnConnect;
     WifiManager wifiManager;
-    Timer timer;
+
+    final String LOG_TAG = getClass().getName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +74,6 @@ public class CheckConnectionActivity extends Activity implements Serializable {
         customFont = Typeface.createFromAsset(getAssets(), "fonts/Lato-LightItalic.ttf");
         txtDeviceModel.setTypeface(customFont);
 
-        timer = new Timer();
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,7 +93,6 @@ public class CheckConnectionActivity extends Activity implements Serializable {
     private void checkConnection() {
         if (wifiManager.isWifiEnabled() == false) {
             txtMessage.setText(getString(R.string.no_wifi));
-            //Utilities.makeToast(getApplicationContext(), getString(R.string.no_wifi));
             endProgress();
             return;
         }
@@ -103,27 +102,37 @@ public class CheckConnectionActivity extends Activity implements Serializable {
             if (serverIpAddress != null && !serverIpAddress.isEmpty()) {
                 IpAddressHandler.setServerIpAddress(serverIpAddress);
                 IpAddressHandler.setDeviceIpAddress(deviceIpAddress);
+
                 Thread connect = new Thread(new Runnable() {
                     @Override
                     public void run() {
+
                         Socket socket = null;
                         DataOutputStream out = null;
                         BufferedReader in = null;
                         try {
                             socket = new Socket(serverIpAddress, Utilities.ANDROID_CONTROL_PORT);
+                            socket.setSoTimeout(10000);
                             out = new DataOutputStream(socket.getOutputStream());
                             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                             out.writeBytes("ANDROID");
                             out.flush();
+
                             String response;
 
                             while ((response = in.readLine()) != null) {
                                 if (response.contains("OK")) {
+                                    if (out != null) {
+                                        out.close();
+                                    }
+                                    if (in != null) {
+                                        in.close();
+                                    }
                                     SocketHandler.setSocket(socket);
                                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                    finish();
                                     startActivity(intent);
+                                    finish();
                                 }
                                 if (response.contains("LIMIT")) {
                                     runOnUiThread(new Runnable() {
@@ -135,8 +144,8 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                                     });
                                 }
                             }
-                        } catch (IOException ex) {
-                            Log.e(getClass().getName(), ex.toString());
+                        } catch (SocketTimeoutException ex){
+                            Log.e(LOG_TAG, ex.toString());
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -144,20 +153,15 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                                     endProgress();
                                 }
                             });
-                        } finally {
-                            try {
-                                if (in != null) {
-                                    in.close();
+                        } catch (IOException ex) {
+                            Log.e(LOG_TAG, ex.toString());
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtMessage.setText(getString(R.string.no_connection));
+                                    endProgress();
                                 }
-                                if (out != null) {
-                                    out.close();
-                                }
-                                if (socket != null) {
-                                    socket.close();
-                                }
-                            } catch (IOException ex) {
-                                Log.e(getClass().getName(), ex.toString());
-                            }
+                            });
                         }
                     }
                 });
@@ -166,8 +170,24 @@ public class CheckConnectionActivity extends Activity implements Serializable {
         } else {
             txtMessage.setText(getString(R.string.no_connection));
             endProgress();
-            return;
         }
+    }
+
+
+    private void preProgress() {
+        btnConnect.setEnabled(false);
+        if (txtMessage.getVisibility() == View.VISIBLE) {
+            txtMessage.setVisibility(View.INVISIBLE);
+        }
+        progressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void endProgress() {
+        btnConnect.setEnabled(true);
+        if (txtMessage.getText() != null && !txtMessage.getText().toString().isEmpty()) {
+            txtMessage.setVisibility(View.VISIBLE);
+        }
+        progressBar.setVisibility(View.INVISIBLE);
     }
 
     //Get network ip address
@@ -204,21 +224,5 @@ public class CheckConnectionActivity extends Activity implements Serializable {
             }
         }
         return serverIpAddress.toString();
-    }
-
-    private void preProgress() {
-        btnConnect.setEnabled(false);
-        if (txtMessage.getVisibility() == View.VISIBLE) {
-            txtMessage.setVisibility(View.INVISIBLE);
-        }
-        progressBar.setVisibility(View.VISIBLE);
-    }
-
-    private void endProgress() {
-        btnConnect.setEnabled(true);
-        if (txtMessage.getText() != null && !txtMessage.getText().toString().isEmpty()) {
-            txtMessage.setVisibility(View.VISIBLE);
-        }
-        progressBar.setVisibility(View.INVISIBLE);
     }
 }

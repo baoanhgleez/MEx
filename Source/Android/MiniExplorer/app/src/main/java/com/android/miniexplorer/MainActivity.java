@@ -2,6 +2,7 @@ package com.android.miniexplorer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -15,8 +16,6 @@ import android.widget.RelativeLayout;
 
 import com.android.miniexplorer.Handler.IpAddressHandler;
 import com.android.miniexplorer.Handler.SocketHandler;
-import com.github.nisrulz.sensey.RotationAngleDetector;
-import com.github.nisrulz.sensey.Sensey;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,12 +24,11 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
-    //Declare variables
+    //Declare view component
     RelativeLayout controlLayout;
     Button btnSteeringWheel;
     Button btnSpeed;
@@ -41,33 +39,31 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Button btnSignalRight;
     Button btnVr;
     ImageButton btnDisconnect;
+    WebView webView;
 
     GestureDetector gestureDetector;
-    WebView webView;
-    double gearSwitchMidPoint;
+    Thread sendThread;
 
+    //variables
+    double gearSwitchMidPoint;
     boolean flag = true;
     int buzzer = 0;
     int vr = 0;
     JSONObject data = new JSONObject();
     static int mode = 0;
+
+
     static int SPEED_LEVEL_MIN = 0;
     static int SPEED_LEVEL = 0;
     static int SPEED_LEVEL_MAX = 100;
     static double vrRotateAngle = 90;
-    RotationAngleDetector.RotationAngleListener rotationAngleListener;
-    double Amin = 0;
-    double Amax = 0;
-    double Bmin = 0;
-    double Bmax = 180;
-    double A = 0;
-    double B = 0;
-    boolean initial = true;
+
+    boolean doubleBackToExit = false;
+
+    final String LOG_TAG = getClass().getName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.i(Utilities.TAG, "onCreate() start");
-
         super.onCreate(savedInstanceState);
 
         // hide status bar
@@ -75,15 +71,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setContentView(R.layout.activity_main);
 
         initial_views();
-        resetSavedValue();
-
-        Log.i(Utilities.TAG, "onCreate() end");
-        sendData();
+        //sendData();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        vr = 0;
+        resetSavedValue();
+
         Utilities.setFullScreen(getWindow());
         if (IpAddressHandler.getServerIpAddress() != null && !IpAddressHandler.getServerIpAddress().isEmpty()) {
             webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAM_NORMAL_URL);
@@ -107,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Sensey.getInstance().stop();
+        flag = false;
     }
 
     private void initial_views() {
@@ -134,22 +130,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         btnSignalLeft.setOnTouchListener(this);
         btnVr.setOnTouchListener(this);
         btnDisconnect.setOnTouchListener(this);
-
-        Sensey.getInstance().init(getApplicationContext());
-        rotationAngleListener = new RotationAngleDetector.RotationAngleListener() {
-            @Override
-            public void onRotation(float v, float v1, float v2) {
-                if (initial) {
-                    A = v;
-                    initial = false;
-                    Amin = v - 90;
-                    Amax = v + 90;
-                }
-                B = (v-Amin)/(Amax-Amin) * (Bmax-Bmin) + Bmin;
-                Log.d(getClass().getName(), String.valueOf(B));
-            }
-        };
-
 
         //Gesture detector
         gestureDetector = new GestureDetector(this, new GestureDetector.OnGestureListener() {
@@ -232,62 +212,59 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void sendData() {
         flag = true;
 
-//        Socket socket = SocketHandler .getSocket();
-//        PrintWriter out = new
-        Thread threadSend = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Socket socket = SocketHandler.getSocket();
-                DataOutputStream out = null;
-                BufferedReader in = null;
-                try {
-                    out = new DataOutputStream(socket.getOutputStream());
-                    in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-                    while (flag) {
-                        data = new JSONObject();
-                        try {
-                            if (vr == 0) {
-                                data.put("vr", vr);
-                                data.put("mode", mode);
-                                data.put("speed", SPEED_LEVEL);
-                                data.put("angle", Math.round(rotateAngle + 180));
-                                data.put("buzzer", buzzer);
-                                data.put("led", signalTurnFlag);
-                            } else if (vr == 1) {
-                                data.put("vr", vr);
-                                data.put("angle", vrRotateAngle);
-                            }
-                        } catch (JSONException e) {
-                            Log.e("ERROR", e.getMessage());
-                        }
-                        out.writeBytes(data.toString());
-                        out.flush();
-                        Thread.sleep(100);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
+        if (sendThread == null) {
+            sendThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Socket socket = SocketHandler.getSocket();
+                    DataOutputStream out = null;
+                    BufferedReader in = null;
                     try {
-                        if (in != null) {
-                            in.close();
+                        out = new DataOutputStream(socket.getOutputStream());
+                        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                        while (flag) {
+                            data = new JSONObject();
+                            try {
+                                if (vr == 0) {
+                                    data.put("vr", vr);
+                                    data.put("mode", mode);
+                                    data.put("speed", SPEED_LEVEL);
+                                    data.put("angle", Math.round(rotateAngle + 180));
+                                    data.put("buzzer", buzzer);
+                                    data.put("led", signalTurnFlag);
+                                } else if (vr == 1) {
+                                    data.put("vr", vr);
+                                    data.put("angle", vrRotateAngle);
+                                }
+                            } catch (JSONException e) {
+                                Log.e(LOG_TAG, e.toString());
+                            }
+                            out.writeBytes(data.toString());
+                            out.flush();
+                            Thread.sleep(100);
                         }
-                        if (out != null) {
-                            out.close();
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            if (in != null) {
+                                in.close();
+                            }
+                            if (out != null) {
+                                out.close();
+                            }
+                            if (socket != null) {
+                                socket.close();
+                            }
+                        } catch (IOException ex) {
+                            Log.e(getClass().getName(), ex.toString());
                         }
-                        if (socket != null) {
-                            flag = false;
-                            socket.close();
-                        }
-                    } catch (IOException ex) {
-                        Log.e(getClass().getName(), ex.toString());
                     }
                 }
-            }
-        });
-        threadSend.start();
+            });
+            sendThread.start();
+        }
     }
 
     @Override
@@ -344,18 +321,42 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
 
             case R.id.btnDisconnect:
-                Intent intentCheckActivity = new Intent(getApplicationContext(), CheckConnectionActivity.class);
-                startActivity(intentCheckActivity);
+                switch (event.getAction()){
+                    case MotionEvent.ACTION_DOWN:
+                        flag = false;
+                        Intent intentCheckActivity = new Intent(getApplicationContext(), CheckConnectionActivity.class);
+                        startActivity(intentCheckActivity);
+                        finish();
+                        break;
+                }
                 break;
             case R.id.btnVr:
-                Intent intentVrActivity = new Intent(this, VRCardBoard.class);
+                Intent intentVrActivity = new Intent(this, VRActivity.class);
                 vr = 1;
                 webView.loadUrl("about:blank");
                 startActivity(intentVrActivity);
+                break;
         }
         return false;
     }
 
+//    @Override
+//    public void onBackPressed() {
+//        if (doubleBackToExit) {
+//            super.onBackPressed();
+//            return;
+//        }
+//
+//        doubleBackToExit = true;
+//        Utilities.makeToast(getApplicationContext(), "Press back again to leave");
+//
+//        new Handler().postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                doubleBackToExit = false;
+//            }
+//        }, 2000);
+//    }
 
     int signalTurnFlag;
 
@@ -385,6 +386,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 } else {
                     signalTurnFlag = 2;
                 }
+            }
+
+            if (signalTurnFlag == 0) {
+                btnSignalLeft.setBackgroundResource(R.drawable.turnleft);
+                btnSignalRight.setBackgroundResource(R.drawable.turnrigh);
+            } else if (signalTurnFlag == 1) {
+                btnSignalLeft.setBackgroundResource(R.drawable.turnlefton);
+                btnSignalRight.setBackgroundResource(R.drawable.turnrigh);
+            } else {
+                btnSignalLeft.setBackgroundResource(R.drawable.turnleft);
+                btnSignalRight.setBackgroundResource(R.drawable.turnrighon);
             }
         }
     }
@@ -457,7 +469,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return 4;
         return 0;
     }
-
 
 
 }

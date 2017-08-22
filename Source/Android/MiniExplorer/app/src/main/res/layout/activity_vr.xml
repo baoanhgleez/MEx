@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_weight="2"
-    tools:context="com.android.miniexplorer.VRCardBoard">
+    tools:context="com.android.miniexplorer.VRActivity">
 
     <WebView
         android:id="@+id/webView"
@@ -23,18 +23,22 @@
             android:layout_weight="5">
 
             <ImageView
+                android:id="@+id/left_turnleft"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
-                android:src="@drawable/turnleftled" />
+                android:src="@drawable/turnleftled"
+                android:visibility="invisible" />
 
             <ImageView
+                android:id="@+id/left_turnright"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentTop="true"
-                android:src="@drawable/turnrightled" />
+                android:src="@drawable/turnrightled"
+                android:visibility="invisible" />
         </RelativeLayout>
 
         <RelativeLayout
@@ -43,18 +47,22 @@
             android:layout_weight="5">
 
             <ImageView
+                android:id="@+id/right_turnleft"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentTop="true"
-                android:src="@drawable/turnleftled" />
+                android:src="@drawable/turnleftled"
+                android:visibility="invisible" />
 
             <ImageView
+                android:id="@+id/right_turnright"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentTop="true"
-                android:src="@drawable/turnrightled" />
+                android:src="@drawable/turnrightled"
+                android:visibility="invisible" />
         </RelativeLayout>
     </LinearLayout>
 </RelativeLayout>
