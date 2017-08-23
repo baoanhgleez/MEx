@@ -7,9 +7,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.android.miniexplorer.Handler.IpAddressHandler;
 import com.android.miniexplorer.Handler.SocketHandler;
@@ -26,25 +29,31 @@ import java.net.Socket;
 
 public class VRActivity extends AppCompatActivity {
 
+    ViewGroup upperLayout;
+    ViewGroup lowerLayout;
     WebView webView;
     ImageView leftTurnLeft;
     ImageView leftTurnRight;
     ImageView rightTurnLeft;
     ImageView rightTurnRight;
+    TextView txtCount;
+    Button btnStart;
+
+    boolean initial = true;
+    double param;
+    double paramMin = 0;
+    double paramMax = 0;
+
+    boolean isContinuous = true;
+    int signalTurn = 0;
+    int count = 5;
 
     RotationAngleDetector.RotationAngleListener rotationAngleListener;
-    boolean initial = true;
-    int counter = 0;
-    int params = 0;
-    double Amin = 0;
-    double Amax = 0;
-    double Bmin = 0;
-    double Bmax = 180;
-    double B = 0;
-    int signalTurn = 0;
-
-
+    Socket socket;
+    BufferedReader in;
+    Thread readThread;
     JSONObject object;
+
     final String LOG_TAG = getClass().getName();
 
     @Override
@@ -54,49 +63,49 @@ public class VRActivity extends AppCompatActivity {
 
         Utilities.setFullScreen(getWindow());
 
+        upperLayout = (ViewGroup) findViewById(R.id.upper_layout);
+        lowerLayout = (ViewGroup) findViewById(R.id.lower_layout);
         leftTurnLeft = (ImageView) findViewById(R.id.left_turnleft);
         leftTurnRight = (ImageView) findViewById(R.id.left_turnright);
         rightTurnLeft = (ImageView) findViewById(R.id.right_turnleft);
         rightTurnRight = (ImageView) findViewById(R.id.right_turnright);
+        txtCount = (TextView) findViewById(R.id.countdown);
+        btnStart = (Button) findViewById(R.id.btnStart);
 
-
-        Sensey.getInstance().init(getApplicationContext());
-        rotationAngleListener = new RotationAngleDetector.RotationAngleListener() {
+        btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onRotation(float v, float v1, float v2) {
-                if (initial) {
-                    params += v;
-                    if (counter == 10) {
-                        initial = false;
-                        int abc = params / 10;
-                        Amin = abc - 90;
-                        Amax = abc + 90;
+            public void onClick(View v) {
+                btnStart.setVisibility(View.GONE);
+                txtCount.setVisibility(View.VISIBLE);
+                txtCount.setText(String.valueOf(count));
+                final Handler hander = new Handler();
+                hander.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        count -= 1;
+                        txtCount.setText(String.valueOf(count));
+                        if (count == 0) {
+                            upperLayout.setVisibility(View.GONE);
+                            lowerLayout.setVisibility(View.VISIBLE);
+                            Sensey.getInstance().startRotationAngleDetection(rotationAngleListener);
+                            readThread.start();
+                            return;
+                        }
+                        hander.postDelayed(this, 1000);
                     }
-                    counter += 1;
-                } else {
-                    B = (v-Amin)/(Amax-Amin) * (Bmax-Bmin) + Bmin;
-                    if (B < 0) {
-                        B = 0;
-                    } else if (B > 180) {
-                        B = 180;
-                    }
-                    MainActivity.vrRotateAngle = Math.round(B);
-                }
+                }, 1000);
             }
-        };
-        Sensey.getInstance().startRotationAngleDetection(rotationAngleListener);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        webView = (WebView) findViewById(R.id.webView);
+        });
 
-        final Socket socket = SocketHandler.getSocket();
+        socket = SocketHandler.getSocket();
         if (socket != null) {
-            Thread readThread = new Thread(new Runnable() {
+            readThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                         String response = null;
-                        while ((response = in.readLine()) != null) {
+                        while ((response = in.readLine()) != null && isContinuous) {
                             try {
                                 object = new JSONObject(response);
                                 signalTurn = object.getInt("led");
@@ -127,17 +136,49 @@ public class VRActivity extends AppCompatActivity {
                         }
                     } catch (IOException ex) {
                         Log.e(LOG_TAG, ex.toString());
+                    } finally {
+                        try {
+                            if (in != null) {
+                                in.close();
+                            }
+                        } catch (IOException ex) {
+                            Log.e(LOG_TAG, ex.toString());
+                        }
+
                     }
                 }
             });
-//            readThread.start();
         }
+
+        Sensey.getInstance().init(getApplicationContext());
+        rotationAngleListener = new RotationAngleDetector.RotationAngleListener() {
+            @Override
+            public void onRotation(float v, float v1, float v2) {
+                if (initial) {
+                    param = v;
+                    paramMin = param - 90;
+                    paramMax = param + 90;
+                    initial = false;
+                } else {
+                    param = Utilities.mapping(v, paramMin, paramMax, 0, 180); //map tu goc quay cua dien thoai qua goc 0 -> 180
+                    MainActivity.vrRotateAngle = Math.round(param);
+                }
+            }
+        };
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        webView = (WebView) findViewById(R.id.webView);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAMING_VR_URL);
+        if (IpAddressHandler.getServerIpAddress() != null) {
+            webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAMING_VR_URL);
+        } else {
+            webView.loadUrl("about:blank");
+        }
+
     }
 
     @Override
@@ -155,7 +196,14 @@ public class VRActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Sensey.getInstance().startRotationAngleDetection(rotationAngleListener);
+        isContinuous = false;
+        Sensey.getInstance().stopRotationAngleDetection(rotationAngleListener);
         Sensey.getInstance().stop();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
     }
 }

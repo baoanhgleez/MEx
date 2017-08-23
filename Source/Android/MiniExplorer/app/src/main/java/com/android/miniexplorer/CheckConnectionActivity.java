@@ -144,7 +144,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                                     });
                                 }
                             }
-                        } catch (SocketTimeoutException ex){
+                        } catch (SocketTimeoutException ex) {
                             Log.e(LOG_TAG, ex.toString());
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -202,7 +202,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
         try {
             ipString = InetAddress.getByAddress(ipByteArray).getHostAddress();
         } catch (UnknownHostException ex) {
-            Log.e("WIFI IP", "Unable to get host address.");
+            Log.e(LOG_TAG, "Unable to get host address.");
             ipString = null;
         }
         return ipString;

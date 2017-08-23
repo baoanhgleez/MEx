@@ -6,63 +6,93 @@
     android:layout_weight="2"
     tools:context="com.android.miniexplorer.VRActivity">
 
-    <WebView
-        android:id="@+id/webView"
+    <RelativeLayout
+        android:id="@+id/lower_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/white"></WebView>
+        android:visibility="invisible">
 
-    <LinearLayout
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/white"></WebView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:weightSum="10">
+
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="5">
+
+                <ImageView
+                    android:id="@+id/left_turnleft"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentTop="true"
+                    android:src="@drawable/turnleftled"
+                    android:visibility="invisible" />
+
+                <ImageView
+                    android:id="@+id/left_turnright"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentTop="true"
+                    android:src="@drawable/turnrightled"
+                    android:visibility="invisible" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="5">
+
+                <ImageView
+                    android:id="@+id/right_turnleft"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentTop="true"
+                    android:src="@drawable/turnleftled"
+                    android:visibility="invisible" />
+
+                <ImageView
+                    android:id="@+id/right_turnright"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentTop="true"
+                    android:src="@drawable/turnrightled"
+                    android:visibility="invisible" />
+            </RelativeLayout>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/upper_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:weightSum="10">
+        android:layout_height="match_parent">
 
-        <RelativeLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/countdown"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="5">
+            android:layout_above="@+id/btnStart"
+            android:layout_centerInParent="true"
+            android:textSize="@dimen/text_larger"
+            android:visibility="invisible" />
 
-            <ImageView
-                android:id="@+id/left_turnleft"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:src="@drawable/turnleftled"
-                android:visibility="invisible" />
-
-            <ImageView
-                android:id="@+id/left_turnright"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentTop="true"
-                android:src="@drawable/turnrightled"
-                android:visibility="invisible" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:layout_width="0dp"
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="5">
-
-            <ImageView
-                android:id="@+id/right_turnleft"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentTop="true"
-                android:src="@drawable/turnleftled"
-                android:visibility="invisible" />
-
-            <ImageView
-                android:id="@+id/right_turnright"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentTop="true"
-                android:src="@drawable/turnrightled"
-                android:visibility="invisible" />
-        </RelativeLayout>
-    </LinearLayout>
+            android:layout_centerInParent="true"
+            android:background="@color/green_sea"
+            android:text="Start" />
+    </RelativeLayout>
 </RelativeLayout>
