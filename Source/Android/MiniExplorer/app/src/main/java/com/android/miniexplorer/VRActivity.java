@@ -26,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.TimerTask;
 
 public class VRActivity extends AppCompatActivity {
 
@@ -160,6 +161,7 @@ public class VRActivity extends AppCompatActivity {
                     paramMax = param + 90;
                     initial = false;
                 } else {
+                    System.out.println(param);
                     param = Utilities.mapping(v, paramMin, paramMax, 0, 180); //map tu goc quay cua dien thoai qua goc 0 -> 180
                     MainActivity.vrRotateAngle = Math.round(param);
                 }
@@ -173,6 +175,7 @@ public class VRActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        Sensey.getInstance().startRotationAngleDetection(rotationAngleListener);
         if (IpAddressHandler.getServerIpAddress() != null) {
             webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAMING_VR_URL);
         } else {
@@ -190,15 +193,31 @@ public class VRActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        Sensey.getInstance().stopRotationAngleDetection(rotationAngleListener);
+        MainActivity.vrRotateAngle = 90;
         webView.loadUrl("about:blank");
     }
 
     @Override
     protected void onDestroy() {
+        webView.loadUrl("about:blank");
+        MainActivity.vrRotateAngle = 90;
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+
+            }
+        };
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                isContinuous = false;
+                Sensey.getInstance().stopRotationAngleDetection(rotationAngleListener);
+                Sensey.getInstance().stop();
+            }
+        }, 500);
         super.onDestroy();
-        isContinuous = false;
-        Sensey.getInstance().stopRotationAngleDetection(rotationAngleListener);
-        Sensey.getInstance().stop();
     }
 
     @Override

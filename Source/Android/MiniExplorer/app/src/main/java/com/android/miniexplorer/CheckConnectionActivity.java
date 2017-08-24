@@ -123,12 +123,6 @@ public class CheckConnectionActivity extends Activity implements Serializable {
 
                             while ((response = in.readLine()) != null) {
                                 if (response.contains("OK")) {
-                                    if (out != null) {
-                                        out.close();
-                                    }
-                                    if (in != null) {
-                                        in.close();
-                                    }
                                     SocketHandler.setSocket(socket);
                                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                                     startActivity(intent);
@@ -139,6 +133,15 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                                         @Override
                                         public void run() {
                                             txtMessage.setText(getString(R.string.over_capacity));
+                                            endProgress();
+                                        }
+                                    });
+                                }
+                                if (response.contains("NO")) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            txtMessage.setText(getString(R.string.no_connection));
                                             endProgress();
                                         }
                                     });

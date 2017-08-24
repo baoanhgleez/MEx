@@ -134,26 +134,28 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         gestureDetector = new GestureDetector(this, new GestureDetector.OnGestureListener() {
             @Override
             public boolean onDown(MotionEvent e) {
-                gearSwitchMidPoint = btnGearSwitch.getY();
-                if (e.getY() <= gearSwitchMidPoint) {
-                    if (mode > 0) {
-                        mode -= 1;
-                        SPEED_LEVEL = 0;
+                if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                    gearSwitchMidPoint = btnGearSwitch.getY();
+                    if (e.getY() <= gearSwitchMidPoint) {
+                        if (mode > 0) {
+                            mode -= 1;
+                            SPEED_LEVEL = 10;
+                        }
+                    } else if (e.getY() > gearSwitchMidPoint) {
+                        if (mode < 2) {
+                            mode += 1;
+                            SPEED_LEVEL = 10;
+                        }
                     }
-                } else if (e.getY() > gearSwitchMidPoint) {
-                    if (mode < 2) {
-                        mode += 1;
-                        SPEED_LEVEL = 0;
+                    if (mode == 0) {
+                        btnGearSwitch.setBackgroundResource(R.drawable.parkingmode);
                     }
-                }
-                if (mode == 0) {
-                    btnGearSwitch.setBackgroundResource(R.drawable.parkingmode);
-                }
-                if (mode == 1) {
-                    btnGearSwitch.setBackgroundResource(R.drawable.drivemode);
-                }
-                if (mode == 2) {
-                    btnGearSwitch.setBackgroundResource(R.drawable.reversemode);
+                    if (mode == 1) {
+                        btnGearSwitch.setBackgroundResource(R.drawable.drivemode);
+                    }
+                    if (mode == 2) {
+                        btnGearSwitch.setBackgroundResource(R.drawable.reversemode);
+                    }
                 }
                 return false;
             }
@@ -184,13 +186,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     case 1:
                         if (mode > 0) {
                             mode -= 1;
-                            SPEED_LEVEL = 0;
+                            SPEED_LEVEL = 10;
                         }
                         break;
                     case 3:
                         if (mode < 2) {
                             mode += 1;
-                            SPEED_LEVEL = 0;
+                            SPEED_LEVEL = 10;
                         }
                         break;
                 }
