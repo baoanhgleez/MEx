@@ -334,10 +334,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case R.id.btnVr:
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        Intent intentVrActivity = new Intent(this, VRActivity.class);
+                        Intent intentSplashActivity = new Intent(this, SplashActivity.class);
                         vr = 1;
                         webView.loadUrl("about:blank");
-                        startActivity(intentVrActivity);
+                        startActivity(intentSplashActivity);
                         break;
                 }
                 break;
