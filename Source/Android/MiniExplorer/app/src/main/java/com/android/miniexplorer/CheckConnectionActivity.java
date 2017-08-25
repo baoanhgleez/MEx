@@ -123,12 +123,6 @@ public class CheckConnectionActivity extends Activity implements Serializable {
 
                             while ((response = in.readLine()) != null) {
                                 if (response.contains("OK")) {
-                                    if (out != null) {
-                                        out.close();
-                                    }
-                                    if (in != null) {
-                                        in.close();
-                                    }
                                     SocketHandler.setSocket(socket);
                                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                                     startActivity(intent);
@@ -143,8 +137,17 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                                         }
                                     });
                                 }
+                                if (response.contains("NO")) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            txtMessage.setText(getString(R.string.no_connection));
+                                            endProgress();
+                                        }
+                                    });
+                                }
                             }
-                        } catch (SocketTimeoutException ex){
+                        } catch (SocketTimeoutException ex) {
                             Log.e(LOG_TAG, ex.toString());
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -202,7 +205,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
         try {
             ipString = InetAddress.getByAddress(ipByteArray).getHostAddress();
         } catch (UnknownHostException ex) {
-            Log.e("WIFI IP", "Unable to get host address.");
+            Log.e(LOG_TAG, "Unable to get host address.");
             ipString = null;
         }
         return ipString;

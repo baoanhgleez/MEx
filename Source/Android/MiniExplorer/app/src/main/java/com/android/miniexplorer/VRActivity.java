@@ -7,9 +7,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.android.miniexplorer.Handler.IpAddressHandler;
 import com.android.miniexplorer.Handler.SocketHandler;
@@ -23,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.TimerTask;
 
 public class VRActivity extends AppCompatActivity {
 
@@ -32,19 +36,18 @@ public class VRActivity extends AppCompatActivity {
     ImageView rightTurnLeft;
     ImageView rightTurnRight;
 
-    RotationAngleDetector.RotationAngleListener rotationAngleListener;
     boolean initial = true;
-    int counter = 0;
-    int params = 0;
-    double Amin = 0;
-    double Amax = 0;
-    double Bmin = 0;
-    double Bmax = 180;
-    double B = 0;
+    double startCoordinate;
+
+    boolean isContinuous = true;
     int signalTurn = 0;
 
-
+    RotationAngleDetector.RotationAngleListener rotationAngleListener;
+    Socket socket;
+    BufferedReader in;
+    Thread readThread;
     JSONObject object;
+
     final String LOG_TAG = getClass().getName();
 
     @Override
@@ -59,44 +62,36 @@ public class VRActivity extends AppCompatActivity {
         rightTurnLeft = (ImageView) findViewById(R.id.right_turnleft);
         rightTurnRight = (ImageView) findViewById(R.id.right_turnright);
 
-
         Sensey.getInstance().init(getApplicationContext());
+
         rotationAngleListener = new RotationAngleDetector.RotationAngleListener() {
             @Override
             public void onRotation(float v, float v1, float v2) {
                 if (initial) {
-                    params += v;
-                    if (counter == 10) {
-                        initial = false;
-                        int abc = params / 10;
-                        Amin = abc - 90;
-                        Amax = abc + 90;
-                    }
-                    counter += 1;
+                    startCoordinate = v;
+                    initial = false;
                 } else {
-                    B = (v-Amin)/(Amax-Amin) * (Bmax-Bmin) + Bmin;
-                    if (B < 0) {
-                        B = 0;
-                    } else if (B > 180) {
-                        B = 180;
+                    double rotateAngle = (v - startCoordinate + 540) % 360 - 180;
+                    double angle = 90 + rotateAngle;
+                    if (angle < 0) {
+                        angle = 0;
+                    } else if (angle > 180) {
+                        angle = 180;
                     }
-                    MainActivity.vrRotateAngle = Math.round(B);
+                    MainActivity.vrRotateAngle = Math.round(angle);
                 }
             }
         };
-        Sensey.getInstance().startRotationAngleDetection(rotationAngleListener);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        webView = (WebView) findViewById(R.id.webView);
 
-        final Socket socket = SocketHandler.getSocket();
+        socket = SocketHandler.getSocket();
         if (socket != null) {
-            Thread readThread = new Thread(new Runnable() {
+            readThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                         String response = null;
-                        while ((response = in.readLine()) != null) {
+                        while ((response = in.readLine()) != null && isContinuous) {
                             try {
                                 object = new JSONObject(response);
                                 signalTurn = object.getInt("led");
@@ -127,17 +122,35 @@ public class VRActivity extends AppCompatActivity {
                         }
                     } catch (IOException ex) {
                         Log.e(LOG_TAG, ex.toString());
+                    } finally {
+                        try {
+                            if (in != null) {
+                                in.close();
+                            }
+                        } catch (IOException ex) {
+                            Log.e(LOG_TAG, ex.toString());
+                        }
+
                     }
                 }
             });
-//            readThread.start();
+            readThread.start();
         }
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        webView = (WebView) findViewById(R.id.webView);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAMING_VR_URL);
+        Sensey.getInstance().startRotationAngleDetection(rotationAngleListener);
+        if (IpAddressHandler.getServerIpAddress() != null) {
+            webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAMING_VR_URL);
+        } else {
+            webView.loadUrl("about:blank");
+        }
+
     }
 
     @Override
@@ -149,13 +162,23 @@ public class VRActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        Sensey.getInstance().stopRotationAngleDetection(rotationAngleListener);
+        MainActivity.vrRotateAngle = 90;
         webView.loadUrl("about:blank");
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        Sensey.getInstance().startRotationAngleDetection(rotationAngleListener);
+        webView.loadUrl("about:blank");
+        isContinuous = false;
+        Sensey.getInstance().stopRotationAngleDetection(rotationAngleListener);
         Sensey.getInstance().stop();
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
     }
 }

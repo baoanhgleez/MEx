@@ -46,17 +46,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     //variables
     double gearSwitchMidPoint;
-    boolean flag = true;
+    boolean isContinuous = true;
+
+    JSONObject data = new JSONObject();
     int buzzer = 0;
     int vr = 0;
-    JSONObject data = new JSONObject();
     static int mode = 0;
-
-
+    static double vrRotateAngle = 90;
     static int SPEED_LEVEL_MIN = 0;
     static int SPEED_LEVEL = 0;
     static int SPEED_LEVEL_MAX = 100;
-    static double vrRotateAngle = 90;
 
     boolean doubleBackToExit = false;
 
@@ -71,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setContentView(R.layout.activity_main);
 
         initial_views();
-        //sendData();
+        sendData();
     }
 
     @Override
@@ -103,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        flag = false;
+        isContinuous = false;
     }
 
     private void initial_views() {
@@ -135,26 +134,28 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         gestureDetector = new GestureDetector(this, new GestureDetector.OnGestureListener() {
             @Override
             public boolean onDown(MotionEvent e) {
-                gearSwitchMidPoint = btnGearSwitch.getY();
-                if (e.getY() <= gearSwitchMidPoint) {
-                    if (mode > 0) {
-                        mode -= 1;
-                        SPEED_LEVEL = 0;
+                if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                    gearSwitchMidPoint = btnGearSwitch.getY();
+                    if (e.getY() <= gearSwitchMidPoint) {
+                        if (mode > 0) {
+                            mode -= 1;
+                            SPEED_LEVEL = 10;
+                        }
+                    } else if (e.getY() > gearSwitchMidPoint) {
+                        if (mode < 2) {
+                            mode += 1;
+                            SPEED_LEVEL = 10;
+                        }
                     }
-                } else if (e.getY() > gearSwitchMidPoint) {
-                    if (mode < 2) {
-                        mode += 1;
-                        SPEED_LEVEL = 0;
+                    if (mode == 0) {
+                        btnGearSwitch.setBackgroundResource(R.drawable.parkingmode);
                     }
-                }
-                if (mode == 0) {
-                    btnGearSwitch.setBackgroundResource(R.drawable.parkingmode);
-                }
-                if (mode == 1) {
-                    btnGearSwitch.setBackgroundResource(R.drawable.drivemode);
-                }
-                if (mode == 2) {
-                    btnGearSwitch.setBackgroundResource(R.drawable.reversemode);
+                    if (mode == 1) {
+                        btnGearSwitch.setBackgroundResource(R.drawable.drivemode);
+                    }
+                    if (mode == 2) {
+                        btnGearSwitch.setBackgroundResource(R.drawable.reversemode);
+                    }
                 }
                 return false;
             }
@@ -185,13 +186,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     case 1:
                         if (mode > 0) {
                             mode -= 1;
-                            SPEED_LEVEL = 0;
+                            SPEED_LEVEL = 10;
                         }
                         break;
                     case 3:
                         if (mode < 2) {
                             mode += 1;
-                            SPEED_LEVEL = 0;
+                            SPEED_LEVEL = 10;
                         }
                         break;
                 }
@@ -210,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void sendData() {
-        flag = true;
+        isContinuous = true;
 
         if (sendThread == null) {
             sendThread = new Thread(new Runnable() {
@@ -223,7 +224,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         out = new DataOutputStream(socket.getOutputStream());
                         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                        while (flag) {
+                        while (isContinuous) {
                             data = new JSONObject();
                             try {
                                 if (vr == 0) {
@@ -323,7 +324,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case R.id.btnDisconnect:
                 switch (event.getAction()){
                     case MotionEvent.ACTION_DOWN:
-                        flag = false;
+                        isContinuous = false;
                         Intent intentCheckActivity = new Intent(getApplicationContext(), CheckConnectionActivity.class);
                         startActivity(intentCheckActivity);
                         finish();
@@ -331,32 +332,36 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
                 break;
             case R.id.btnVr:
-                Intent intentVrActivity = new Intent(this, VRActivity.class);
-                vr = 1;
-                webView.loadUrl("about:blank");
-                startActivity(intentVrActivity);
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        Intent intentSplashActivity = new Intent(this, SplashActivity.class);
+                        vr = 1;
+                        webView.loadUrl("about:blank");
+                        startActivity(intentSplashActivity);
+                        break;
+                }
                 break;
         }
         return false;
     }
 
-//    @Override
-//    public void onBackPressed() {
-//        if (doubleBackToExit) {
-//            super.onBackPressed();
-//            return;
-//        }
-//
-//        doubleBackToExit = true;
-//        Utilities.makeToast(getApplicationContext(), "Press back again to leave");
-//
-//        new Handler().postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                doubleBackToExit = false;
-//            }
-//        }, 2000);
-//    }
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExit) {
+            super.onBackPressed();
+            return;
+        }
+
+        doubleBackToExit = true;
+        Utilities.makeToast(getApplicationContext(), "Press back again to leave");
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                doubleBackToExit = false;
+            }
+        }, 2000);
+    }
 
     int signalTurnFlag;
 

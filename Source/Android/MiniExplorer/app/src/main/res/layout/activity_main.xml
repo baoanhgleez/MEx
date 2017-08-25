@@ -11,7 +11,7 @@
         android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/white"></WebView>
+        android:background="@android:color/white"/>
 
     <RelativeLayout
         android:id="@+id/controlLayout"
@@ -38,6 +38,8 @@
             android:layout_marginBottom="10dp"
             android:layout_marginRight="5dp"
             android:background="@drawable/turnleft" />
+
+
 
         <Button
             android:id="@+id/btnTurnRight"
