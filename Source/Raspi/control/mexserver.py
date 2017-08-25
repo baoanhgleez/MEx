@@ -42,7 +42,7 @@ class MExManager():
         self._token = {ANDROID_TAG:0, ARDUINO_TAG:0}
         self._require = False
         self._indicator_flag = False
-    
+        self._stack = Stack()
 
     
     def listen(self):
@@ -135,6 +135,24 @@ class MExManager():
         self.__car_info['mode']=mode
         self._car.move(angle, speed, mode)
 
+    def reverseOrder(self):
+        counter=0
+        while counter<1000:
+            logf('Reverse order: '+order. 
+            order = self._stack.pop()
+            if set('angle', 'speed', 'mode') <= set(order.keys()):
+                if order['mode']!=0:
+                    # reverse mode
+                    mode = 3-order['mode']
+                    # keep speed
+                    speed = order['speed']
+                    # reverse angle
+                    delta = abs(90-order['angle'])
+                    angle = 90 + delta if order['angle']<90 else 90-delta
+                    # car control
+                    self.controlCar(angle, speed, mode)
+                tdelay(0.1)
+
     def controlLedBuzz(self, led_, buzzer_):
         if led_==1:
             logf('Indicator LEFT')
@@ -175,6 +193,7 @@ class MExManager():
                     continue
                   
                 logf('Detected JSON String: '+data)
+                
                 order = json.loads(data)
 
                 if 'vr' not in set(order.keys()):
@@ -185,6 +204,7 @@ class MExManager():
                 elif order['vr']==0:
                     self._require = True
                     self.controlCar(order['angle'], order['speed'], order['mode'])
+                    self._stack.push(order)
                     self.controlLedBuzz(order['led'], order['buzzer'])
                     
             except ValueError:
@@ -216,6 +236,7 @@ class MExManager():
                 logf('Detected JSON String: '+data)
                 order = json.loads(data)
                 self.controlCar(order['angle'], order['speed'], order['mode'])
+                self._stack.push(order)
                 self.controlLedBuzz(order['led'], order['buzzer'])
             except ValueError:
                 logf('ERR: Invalid JSON string!',ARDUINO_TAG)
