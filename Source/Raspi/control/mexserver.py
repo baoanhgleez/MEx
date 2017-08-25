@@ -133,25 +133,27 @@ class MExManager():
         self.__car_info['speed']=speed
         self.__car_info['angle']=angle
         self.__car_info['mode']=mode
+
         self._car.move(angle, speed, mode)
+        # save vao stack de trace back
+        self._stack.push({'mode':mode, 'angle':angle, 'speed':speed})
 
     def reverseOrder(self):
         counter=0
-        while counter<1000:
-            logf('Reverse order: '+order. 
+        while counter<1000: 
             order = self._stack.pop()
-            if set('angle', 'speed', 'mode') <= set(order.keys()):
-                if order['mode']!=0:
-                    # reverse mode
-                    mode = 3-order['mode']
-                    # keep speed
-                    speed = order['speed']
-                    # reverse angle
-                    delta = abs(90-order['angle'])
-                    angle = 90 + delta if order['angle']<90 else 90-delta
-                    # car control
-                    self.controlCar(angle, speed, mode)
-                tdelay(0.1)
+            counter+=1
+            if order['mode']!=0:
+                # reverse mode
+                mode = 3-order['mode']
+                # keep speed
+                speed = order['speed']
+                # reverse angle
+                delta = abs(90-order['angle'])
+                angle = 90 + delta if order['angle']<90 else 90-delta
+                # car control
+                self.controlCar(angle, speed, mode)
+            tdelay(0.1)
 
     def controlLedBuzz(self, led_, buzzer_):
         if led_==1:
@@ -204,7 +206,6 @@ class MExManager():
                 elif order['vr']==0:
                     self._require = True
                     self.controlCar(order['angle'], order['speed'], order['mode'])
-                    self._stack.push(order)
                     self.controlLedBuzz(order['led'], order['buzzer'])
                     
             except ValueError:
@@ -254,6 +255,9 @@ class MExManager():
         
         logf('Close connection to '+devName+str(address)) 
         client.close()
+                 
+        if sum(self._token.values())<=0 and (not self._stack.isEmpty()):
+            self.reverseOrder()
         
                 
 if __name__ == "__main__":
