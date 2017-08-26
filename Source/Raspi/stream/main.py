@@ -15,6 +15,7 @@
 # 3. Navigate the browser to the local webpage.
 from flask import Flask, render_template, Response
 from camera import VideoCamera
+import time
 
 app = Flask(__name__)
 
@@ -34,9 +35,10 @@ def gen(camera):
 
 @app.route('/video_feed')
 def video_feed():
+    time.sleep(0.5)
     return Response(gen(VideoCamera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
 ##    app.run(threaded=True)
-    app.run(threaded=True, host='192.168.0.1', port=8012,debug=True)
+    app.run(threaded=True, host='localhost', port=8012,debug=True)
