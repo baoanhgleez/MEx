@@ -15,7 +15,7 @@ class MExManager():
     __ARDUINO_SET = {'angle', 'speed', 'mode', 'buzzer', 'led'}
 
     __AUTHENTICATE_TIME = 5     # device has time to send authenString
-    __TIMEOUT_DEFAULT= 20       # Auto disconnect after several seconds
+    __TIMEOUT_DEFAULT= 3       # Auto disconnect after several seconds
     
     __car_info = {'speed':0, 'mode':0, 'angle':0, 'led':0, 'buzz':0}
     
@@ -77,7 +77,7 @@ class MExManager():
                     logf('Limitation Reached!')
                     logf('Access Denied!')
                 else:
-                    self._indicator.blink(LedColor.GREEN, 0.1, 5)
+                    self._indicator.blink(LedColor.GREEN, 0.2, 3)
                   
                     # set timeout cho thiet bi duoc ket noi
                     client.settimeout(self.__TIMEOUT_DEFAULT)
@@ -134,26 +134,24 @@ class MExManager():
         self.__car_info['angle']=angle
         self.__car_info['mode']=mode
 
-        self._car.move(angle, speed, mode)
-        # save vao stack de trace back
-        self._stack.push({'mode':mode, 'angle':angle, 'speed':speed})
 
     def reverseOrder(self):
         counter=0
-        while counter<1000: 
+        while counter<1000 and not self._stack.isEmpty(): 
             order = self._stack.pop()
-            counter+=1
-            if order['mode']!=0:
-                # reverse mode
-                mode = 3-order['mode']
-                # keep speed
-                speed = order['speed']
-                # reverse angle
-                delta = abs(90-order['angle'])
-                angle = 90 + delta if order['angle']<90 else 90-delta
-                # car control
-                self.controlCar(angle, speed, mode)
+            logf('Traceback: angle:{}, mode:{}, speed:{}'.format(order['angle'], order['mode'], order['speed']))
+            # reverse mode
+            mode = 3-order['mode'] if order['mode']!=0 else 0
+            # keep speed
+            speed = order['speed']
+            # reverse angle
+            angle = order['angle']
+            #delta = abs(90-order['angle'])
+            #angle = 90 + delta if order['angle']<90 else 90-delta
+            # car control
+            self.controlCar(angle, speed, mode)
             tdelay(0.1)
+            counter+=1
 
     def controlLedBuzz(self, led_, buzzer_):
         if led_==1:
@@ -205,6 +203,10 @@ class MExManager():
                     self._frame.rotate(order['angle']) #  view angle, not steering angle
                 elif order['vr']==0:
                     self._require = True
+                    
+                    # save vao stack de trace back
+                    self._stack.push({'mode':order['mode'], 'angle':order['angle'], 'speed':order['speed']})
+
                     self.controlCar(order['angle'], order['speed'], order['mode'])
                     self.controlLedBuzz(order['led'], order['buzzer'])
                     
@@ -237,6 +239,10 @@ class MExManager():
                 logf('Detected JSON String: '+data)
                 order = json.loads(data)
                 self.controlCar(order['angle'], order['speed'], order['mode'])
+                
+                # save vao stack de trace back
+                self._stack.push({'mode':order['mode'], 'angle':order['angle'], 'speed':order['speed']})
+                
                 self._stack.push(order)
                 self.controlLedBuzz(order['led'], order['buzzer'])
             except ValueError:
