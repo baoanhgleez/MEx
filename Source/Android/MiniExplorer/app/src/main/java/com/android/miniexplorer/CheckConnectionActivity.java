@@ -112,7 +112,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                         BufferedReader in = null;
                         try {
                             socket = new Socket(serverIpAddress, Utilities.ANDROID_CONTROL_PORT);
-                            socket.setSoTimeout(10000);
+                            socket.setSoTimeout(3000);
                             out = new DataOutputStream(socket.getOutputStream());
                             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 

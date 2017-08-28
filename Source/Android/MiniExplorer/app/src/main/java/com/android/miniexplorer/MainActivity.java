@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
 
+        resetSavedValue();
         initial_views();
         sendData();
     }
@@ -76,7 +77,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
-        vr = 0;
         resetSavedValue();
 
         Utilities.setFullScreen(getWindow());
@@ -324,10 +324,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case R.id.btnDisconnect:
                 switch (event.getAction()){
                     case MotionEvent.ACTION_DOWN:
-                        isContinuous = false;
-                        Intent intentCheckActivity = new Intent(getApplicationContext(), CheckConnectionActivity.class);
-                        startActivity(intentCheckActivity);
-                        finish();
+                        disconnect();
                         break;
                 }
                 break;
@@ -343,6 +340,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
         }
         return false;
+    }
+
+    public void disconnect() {
+        isContinuous = false;
+        SocketHandler.closeSocket();
+        Intent intentCheckActivity = new Intent(getApplicationContext(), CheckConnectionActivity.class);
+        startActivity(intentCheckActivity);
+        finish();
     }
 
     @Override
@@ -455,6 +460,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
      * Reset values for next execution;
      */
     private void resetSavedValue() {
+        vr = 0;
+        mode = 0;
+        SPEED_LEVEL = 0;
+        rotateAngle = 0;
+        buzzer = 0;
         signalTurnFlag = 0;
     }
 
