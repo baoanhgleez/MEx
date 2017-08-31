@@ -73,12 +73,9 @@ public class VRActivity extends AppCompatActivity {
                 } else {
                     double rotateAngle = (v - startCoordinate + 540) % 360 - 180;
                     double angle = 90 + rotateAngle;
-                    if (angle < 0) {
-                        angle = 0;
-                    } else if (angle > 180) {
-                        angle = 180;
+                    if (angle >= 0 && angle <= 180) {
+                        MainActivity.vrRotateAngle = Math.round(angle);
                     }
-                    MainActivity.vrRotateAngle = Math.round(angle);
                 }
             }
         };
@@ -169,7 +166,7 @@ public class VRActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        webView.loadUrl("about:blank");
+        webView.destroy();
         isContinuous = false;
         Sensey.getInstance().stopRotationAngleDetection(rotationAngleListener);
         Sensey.getInstance().stop();
@@ -179,6 +176,8 @@ public class VRActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        MainActivity.vrRotateAngle = 90;
+        webView.destroy();
         finish();
     }
 }

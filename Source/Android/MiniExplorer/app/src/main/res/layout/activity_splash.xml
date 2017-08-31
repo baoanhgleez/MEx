@@ -6,14 +6,35 @@
     android:layout_height="match_parent"
     tools:context="com.android.miniexplorer.SplashActivity">
 
-    <TextView
-        android:id="@+id/txtCountDown"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/btnStart"
-        android:layout_centerInParent="true"
-        android:textSize="@dimen/text_larger"
-        android:visibility="invisible" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:weightSum="2">
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent">
+            <TextView
+                android:id="@+id/txtCountDownLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:textSize="@dimen/text_larger"
+                android:visibility="invisible" />
+        </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent">
+            <TextView
+                android:id="@+id/txtCountDownRight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:textSize="@dimen/text_larger"
+                android:visibility="invisible" />
+        </RelativeLayout>
+    </LinearLayout>
 
     <Button
         android:id="@+id/btnStart"

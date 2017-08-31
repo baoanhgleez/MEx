@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -30,13 +31,13 @@ import java.nio.ByteOrder;
 
 public class CheckConnectionActivity extends Activity implements Serializable {
 
+    final String LOG_TAG = getClass().getName();
+
     TextView txtMessage;
     TextView txtDeviceModel;
     ProgressBar progressBar;
     Button btnConnect;
     WifiManager wifiManager;
-
-    final String LOG_TAG = getClass().getName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,33 +47,20 @@ public class CheckConnectionActivity extends Activity implements Serializable {
         initializeComponent();
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-
     private void initializeComponent() {
         txtMessage = (TextView) findViewById(R.id.txtMessage);
         txtDeviceModel = (TextView) findViewById(R.id.txtDeviceModel);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         btnConnect = (Button) findViewById(R.id.btnConnect);
 
+        //Set custom font
         txtMessage = (TextView) findViewById(R.id.txtMessage);
         Typeface customFont = Typeface.createFromAsset(getAssets(), "fonts/Lato-Regular.ttf");
         txtMessage.setTypeface(customFont);
         btnConnect.setTypeface(customFont);
         customFont = Typeface.createFromAsset(getAssets(), "fonts/Lato-LightItalic.ttf");
         txtDeviceModel.setTypeface(customFont);
+
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         btnConnect.setOnClickListener(new View.OnClickListener() {
@@ -91,9 +79,9 @@ public class CheckConnectionActivity extends Activity implements Serializable {
     }
 
     private void checkConnection() {
+        //Check wifi state
         if (wifiManager.isWifiEnabled() == false) {
-            txtMessage.setText(getString(R.string.no_wifi));
-            endProgress();
+            noWifiNotify();
             return;
         }
         String deviceIpAddress = getIpAddress();
@@ -106,21 +94,20 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                 Thread connect = new Thread(new Runnable() {
                     @Override
                     public void run() {
-
                         Socket socket = null;
                         DataOutputStream out = null;
                         BufferedReader in = null;
                         try {
                             socket = new Socket(serverIpAddress, Utilities.ANDROID_CONTROL_PORT);
-                            socket.setSoTimeout(3000);
+                            socket.setSoTimeout(5000);
                             out = new DataOutputStream(socket.getOutputStream());
                             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+                            //Send authentication code
                             out.writeBytes("ANDROID");
                             out.flush();
 
                             String response;
-
                             while ((response = in.readLine()) != null) {
                                 if (response.contains("OK")) {
                                     SocketHandler.setSocket(socket);
@@ -132,8 +119,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            txtMessage.setText(getString(R.string.over_capacity));
-                                            endProgress();
+                                            overCapacityNotify();
                                         }
                                     });
                                 }
@@ -141,8 +127,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            txtMessage.setText(getString(R.string.no_connection));
-                                            endProgress();
+                                            noConnectionNotify();
                                         }
                                     });
                                 }
@@ -152,8 +137,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    txtMessage.setText(getString(R.string.no_connection));
-                                    endProgress();
+                                    noConnectionNotify();
                                 }
                             });
                         } catch (IOException ex) {
@@ -161,8 +145,7 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    txtMessage.setText(getString(R.string.no_connection));
-                                    endProgress();
+                                    noConnectionNotify();
                                 }
                             });
                         }
@@ -171,11 +154,24 @@ public class CheckConnectionActivity extends Activity implements Serializable {
                 connect.start();
             }
         } else {
-            txtMessage.setText(getString(R.string.no_connection));
-            endProgress();
+            noConnectionNotify();
         }
     }
 
+    private void noWifiNotify() {
+        txtMessage.setText(getString(R.string.no_wifi));
+        endProgress();
+    }
+
+    private void noConnectionNotify() {
+        txtMessage.setText(getString(R.string.no_connection));
+        endProgress();
+    }
+
+    private void overCapacityNotify() {
+        txtMessage.setText(getString(R.string.over_capacity));
+        endProgress();
+    }
 
     private void preProgress() {
         btnConnect.setEnabled(false);

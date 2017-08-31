@@ -12,7 +12,8 @@ import com.github.nisrulz.sensey.Sensey;
 
 public class SplashActivity extends AppCompatActivity {
 
-    TextView txtCountDown;
+    TextView txtCountDownLeft;
+    TextView txtCountDownRight;
     Button btnStart;
 
     Handler handler;
@@ -24,21 +25,25 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        txtCountDown = (TextView) findViewById(R.id.txtCountDown);
+        txtCountDownLeft = (TextView) findViewById(R.id.txtCountDownLeft);
+        txtCountDownRight = (TextView) findViewById(R.id.txtCountDownRight);
         btnStart = (Button) findViewById(R.id.btnStart);
 
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 btnStart.setVisibility(View.GONE);
-                txtCountDown.setVisibility(View.VISIBLE);
-                txtCountDown.setText(String.valueOf(count));
+                txtCountDownLeft.setVisibility(View.VISIBLE);
+                txtCountDownLeft.setText(String.valueOf(count));
+                txtCountDownRight.setVisibility(View.VISIBLE);
+                txtCountDownRight.setText(String.valueOf(count));
                 handler = new Handler();
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                        count -= 1;
-                        txtCountDown.setText(String.valueOf(count));
+                        txtCountDownLeft.setText(String.valueOf(count));
+                        txtCountDownRight.setText(String.valueOf(count));
                         if (count == 0) {
                             Intent intent = new Intent(getApplicationContext(), VRActivity.class);
                             startActivity(intent);

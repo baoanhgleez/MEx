@@ -25,6 +25,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     GestureDetector gestureDetector;
     Thread sendThread;
+    Thread receiveThread;
 
     //variables
     double gearSwitchMidPoint;
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     static int SPEED_LEVEL_MAX = 100;
 
     boolean doubleBackToExit = false;
+    int signalTurnFlag;
 
     final String LOG_TAG = getClass().getName();
 
@@ -78,31 +81,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onResume() {
         super.onResume();
         resetSavedValue();
-
         Utilities.setFullScreen(getWindow());
         if (IpAddressHandler.getServerIpAddress() != null && !IpAddressHandler.getServerIpAddress().isEmpty()) {
             webView.loadUrl("http://" + IpAddressHandler.getServerIpAddress() + ":" + Utilities.ANDROID_VR_PORT + "/" + Utilities.STREAM_NORMAL_URL);
-        } else {
-            webView.loadUrl("about:blank");
         }
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        webView.loadUrl("about:blank");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        webView.loadUrl("about:blank");
-    }
-
-    @Override
     protected void onDestroy() {
-        super.onDestroy();
         isContinuous = false;
+        super.onDestroy();
     }
 
     private void initial_views() {
@@ -222,7 +210,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     BufferedReader in = null;
                     try {
                         out = new DataOutputStream(socket.getOutputStream());
-                        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                         while (isContinuous) {
                             data = new JSONObject();
@@ -249,9 +236,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         e.printStackTrace();
                     } finally {
                         try {
-                            if (in != null) {
-                                in.close();
-                            }
                             if (out != null) {
                                 out.close();
                             }
@@ -265,6 +249,29 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             });
             sendThread.start();
+        }
+
+        if (receiveThread == null) {
+            receiveThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Socket socket = SocketHandler.getSocket();
+                    BufferedReader in = null;
+                    try {
+                        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                        String response;
+                        while ((response = in.readLine()) != null) {
+                            System.out.println(response);
+                        }
+                    } catch (IOException ex) {
+                        Log.e(LOG_TAG, ex.toString());
+                    } finally {
+                        SocketHandler.closeSocket();
+                        disconnect();
+                    }
+                }
+            });
+            receiveThread.start();
         }
     }
 
@@ -353,7 +360,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     public void onBackPressed() {
         if (doubleBackToExit) {
-            super.onBackPressed();
+            disconnect();
             return;
         }
 
@@ -367,8 +374,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         }, 2000);
     }
-
-    int signalTurnFlag;
 
     /**
      * Control the led to send signal turn
@@ -423,7 +428,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
 
-    double viewRotation, fingerRotation, newFingerRotation;
+    double fingerRotation, newFingerRotation;
     float rotateAngle;
 
     /**
@@ -484,6 +489,4 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return 4;
         return 0;
     }
-
-
 }
